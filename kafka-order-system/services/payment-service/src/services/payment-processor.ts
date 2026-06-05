@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
+import { paymentsProcessed, paymentsFailed, paymentDuration } from "../metrics";
 
 export interface PaymentResult {
   transactionId: string;
@@ -17,6 +18,7 @@ export async function processPayment(
 ): Promise<PaymentResult> {
   logger.info("Processing payment", { orderId, customerId, amount });
 
+  const startTime = Date.now();
   await new Promise((resolve) => setTimeout(resolve, 200));
 
   const isSuccess = Math.random() < PAYMENT_SUCCESS_RATE;
@@ -31,6 +33,8 @@ export async function processPayment(
         [uuidv4(), orderId, customerId, amount, transactionId]
       );
 
+      paymentsProcessed.inc();
+      paymentDuration.observe((Date.now() - startTime) / 1000);
       logger.info("Payment processed successfully", {
         orderId,
         transactionId,
@@ -46,6 +50,8 @@ export async function processPayment(
         [uuidv4(), orderId, customerId, amount, transactionId, errorMessage]
       );
 
+      paymentsFailed.inc();
+      paymentDuration.observe((Date.now() - startTime) / 1000);
       logger.warn("Payment failed", { orderId, transactionId, errorMessage });
 
       return { transactionId, status: "FAILED", errorMessage };

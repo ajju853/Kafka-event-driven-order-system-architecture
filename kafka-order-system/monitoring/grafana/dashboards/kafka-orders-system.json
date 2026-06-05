@@ -1,0 +1,183 @@
+{
+  "title": "Kafka Order System",
+  "uid": "kafka-orders-system",
+  "version": 1,
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "tags": ["kafka", "orders", "microservices"],
+  "panels": [
+    {
+      "title": "Orders Created / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_created_total[1m])",
+          "legendFormat": "orders/sec"
+        }
+      ],
+      "description": "Rate of orders created per second across all services"
+    },
+    {
+      "title": "Payment Success vs Failure",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_payments_processed_total[1m])",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "rate(kafka_orders_payments_failed_total[1m])",
+          "legendFormat": "failed"
+        }
+      ],
+      "description": "Payment processing outcomes — success vs failure rate"
+    },
+    {
+      "title": "Payment Duration (p50/p95/p99)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(kafka_orders_payment_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(kafka_orders_payment_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(kafka_orders_payment_duration_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "description": "Payment processing latency percentiles"
+    },
+    {
+      "title": "Inventory Stock Reserved / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_stock_reserved_total[1m])",
+          "legendFormat": "reserved"
+        },
+        {
+          "expr": "rate(kafka_orders_stock_released_total[1m])",
+          "legendFormat": "released"
+        },
+        {
+          "expr": "rate(kafka_orders_stock_reservation_failures_total[1m])",
+          "legendFormat": "failures"
+        }
+      ],
+      "description": "Inventory reservation, release, and failure rates"
+    },
+    {
+      "title": "DLQ Events",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "kafka_orders_dlq_events_stored_total",
+          "legendFormat": "stored"
+        },
+        {
+          "expr": "rate(kafka_orders_dlq_events_replayed_total[5m])",
+          "legendFormat": "replayed/sec"
+        },
+        {
+          "expr": "rate(kafka_orders_dlq_replay_failures_total[5m])",
+          "legendFormat": "replay failures/sec"
+        }
+      ],
+      "description": "DLQ event storage count and replay activity"
+    },
+    {
+      "title": "Notifications Sent / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_notifications_sent_total[1m])",
+          "legendFormat": "notifications/sec"
+        }
+      ],
+      "description": "Notification dispatch rate"
+    },
+    {
+      "title": "HTTP Requests / sec (per service)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "description": "HTTP request rate across all microservices"
+    },
+    {
+      "title": "Audit Events Recorded / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_audit_events_total[1m])",
+          "legendFormat": "events/sec"
+        }
+      ],
+      "description": "Audit event recording rate"
+    },
+    {
+      "title": "Rate Limit Hits / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_rate_limit_hits_total[1m])",
+          "legendFormat": "rate limited/sec"
+        }
+      ],
+      "description": "Requests rejected by rate limiter"
+    },
+    {
+      "title": "Outbox Events Published / sec",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        {
+          "expr": "rate(kafka_orders_outbox_published_total[1m])",
+          "legendFormat": "published/sec"
+        }
+      ],
+      "description": "Transactional outbox publication rate"
+    },
+    {
+      "title": "Memory Usage (per service)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "targets": [
+        {
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "description": "Resident memory per microservice"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  }
+}

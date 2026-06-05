@@ -5,6 +5,7 @@ import { config } from "./config";
 import { initializeDatabase, pool } from "./models/db";
 import { InventoryConsumer } from "./consumers/inventory-consumer";
 import { logger } from "./utils/logger";
+import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
 
 async function main() {
   logger.info("Starting payment service...");
@@ -19,6 +20,10 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
+  app.get("/metrics", async (_req, res) => {
+    res.set("Content-Type", getMetricsContentType());
+    res.send(await getMetrics());
+  });
   app.get("/health", async (_req, res) => {
     try {
       await pool.query("SELECT 1");

@@ -2,6 +2,7 @@ import { Kafka, Consumer, EachMessagePayload } from "kafkajs";
 import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import { dlqEventsStored } from "../metrics";
 
 export class DLQConsumer {
   private kafka: Kafka;
@@ -38,6 +39,7 @@ export class DLQConsumer {
 
     try {
       const parsed = JSON.parse(rawValue);
+      dlqEventsStored.inc();
       await this.pool.query(
         `INSERT INTO dlq_events (event_id, original_payload, error_message, consumer_group, source_topic, failed_at)
          VALUES ($1, $2, $3, $4, $5, $6)

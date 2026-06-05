@@ -5,6 +5,7 @@ import { sendOrderConfirmation, sendOrderCancellation } from "../services/email-
 import { sendOrderStatusNotification } from "../services/sms-service";
 import { sendOrderPushNotification } from "../services/push-service";
 import { EVENT_TOPICS } from "@kafka-order-system/shared";
+import { notificationsSent } from "../metrics";
 
 export class OrderEventConsumer {
   private consumer: Consumer;
@@ -99,6 +100,7 @@ export class OrderEventConsumer {
           break;
       }
 
+      notificationsSent.inc();
       logger.info("Notification sent", { topic, orderId: event.orderId });
     } catch (error) {
       logger.error("Failed to process notification event", {

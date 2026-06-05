@@ -3,6 +3,7 @@ import { getProducer } from "./kafka-producer";
 import { config } from "../config";
 import { logger } from "../utils/logger";
 import { EVENT_TOPICS } from "@kafka-order-system/shared";
+import { outboxPublished } from "../metrics";
 
 export class OutboxPublisher {
   private running = false;
@@ -78,6 +79,7 @@ export class OutboxPublisher {
             [event.id]
           );
 
+          outboxPublished.inc();
           logger.debug("Published outbox event to Kafka", {
             eventId: event.id,
             topic: kafkaTopic,

@@ -2,11 +2,14 @@ import { Kafka, Producer } from "kafkajs";
 import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import { dlqEventsReplayed, dlqReplayFailures } from "../metrics";
 
 export class DLQReplayService {
   private pool: Pool;
   private kafka: Kafka;
   private producer: Producer;
+
+  private connected = false;
 
   constructor(pool: Pool) {
     this.pool = pool;
@@ -15,6 +18,12 @@ export class DLQReplayService {
       brokers: [config.kafka.broker],
     });
     this.producer = this.kafka.producer();
+  }
+
+  async connect(): Promise<void> {
+    await this.producer.connect();
+    this.connected = true;
+    logger.info("DLQ replay producer connected");
   }
 
   async getEvents(limit = 50, offset = 0): Promise<{ events: unknown[]; total: number }> {
@@ -55,8 +64,9 @@ export class DLQReplayService {
     const targetTopic = event.source_topic;
 
     try {
-      if (!this.producer) {
+      if (!this.connected) {
         await this.producer.connect();
+        this.connected = true;
       }
 
       await this.producer.send({
@@ -74,10 +84,12 @@ export class DLQReplayService {
         [eventId]
       );
 
+      dlqEventsReplayed.inc();
       logger.info("DLQ event replayed", { eventId, targetTopic });
       return { success: true, targetTopic };
     } catch (error) {
       const msg = (error as Error).message;
+      dlqReplayFailures.inc();
       logger.error("Failed to replay DLQ event", { eventId, error: msg });
       return { success: false, targetTopic, error: msg };
     }

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { OrderService } from "../services/order-service";
 import { CreateOrderRequestSchema } from "../middleware/validation";
 import { logger } from "../utils/logger";
+import { ordersCreated, ordersCancelled, orderProcessingDuration } from "../metrics";
 import { v4 as uuidv4 } from "uuid";
 import { ZodError } from "zod";
 
@@ -13,8 +14,11 @@ export async function createOrder(
   next: NextFunction
 ): Promise<void> {
   try {
+    const startTime = Date.now();
     const validated = CreateOrderRequestSchema.parse(req.body);
     const result = await orderService.createOrder(validated);
+    orderProcessingDuration.observe((Date.now() - startTime) / 1000);
+    ordersCreated.inc();
     res.status(201).json({
       success: true,
       data: result,
@@ -92,8 +96,11 @@ export async function cancelOrder(
   next: NextFunction
 ): Promise<void> {
   try {
+    const startTime = Date.now();
     const { reason } = req.body;
     await orderService.cancelOrder(req.params.id, reason);
+    orderProcessingDuration.observe((Date.now() - startTime) / 1000);
+    ordersCancelled.inc();
     res.json({
       success: true,
       data: { orderId: req.params.id, status: "CANCELLED" },

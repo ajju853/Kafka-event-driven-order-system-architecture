@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white" alt="Kubernetes">
   <img src="https://img.shields.io/badge/OpenTelemetry-000000?logo=opentelemetry&logoColor=white" alt="OpenTelemetry">
   <img src="https://img.shields.io/badge/Jaeger-60C0E0?logo=jaeger&logoColor=white" alt="Jaeger">
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus">
+  <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
   <img src="https://img.shields.io/badge/Next.js-14-000000?logo=next.js&logoColor=white" alt="Next.js">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
 </p>
@@ -132,6 +134,14 @@ Modern e-commerce platforms need to coordinate multiple services — order manag
 │   │  Tracing     │  │   8080)      │  │ Avro · Versioned       │   │
 │   │  (port 16686)│  │              │  │ Backward Compat        │   │
 │   └──────────────┘  └──────────────┘  └────────────────────────┘   │
+│                                                                      │
+│   ┌────────────────────────────────────────────────────────┐        │
+│   │  Prometheus (port 9090)  ◄──  /metrics (all services)  │        │
+│   │  ┌──────────────────────────────────────────────────┐  │        │
+│   │  │  Grafana (port 3000/dashboards)                  │  │        │
+│   │  │  Order KPIs · Consumer Lag · DLQ Rate · Latency  │  │        │
+│   │  └──────────────────────────────────────────────────┘  │        │
+│   └────────────────────────────────────────────────────────┘        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -230,6 +240,8 @@ Modern e-commerce platforms need to coordinate multiple services — order manag
 | Schema Registry | 7.6 | Avro schema versioning |
 | Jaeger | 1.55 | Distributed tracing UI |
 | Kafka UI | Latest | Topic/consumer management |
+| Prometheus | Latest | Metrics collection + alerting |
+| Grafana | Latest | Dashboards + visualization |
 
 ---
 
@@ -383,6 +395,16 @@ Frontend HTTP ──► Order Service ──► Kafka ──► Payment Service 
 
 Open [Jaeger UI](http://localhost:16686) to view traces, filter by service, and drill into span details.
 
+### Prometheus Metrics
+
+Every service exposes a `/metrics` endpoint (port 4001–4007) with structured business and performance metrics. Prometheus scrapes all services every 15s. A pre-built Grafana dashboard provides real-time visibility into:
+
+- **Order throughput** — Created, cancelled, rate-limited
+- **Payment health** — Success rate, failure count, processing duration
+- **Inventory operations** — Reservations, releases, failures
+- **Pipeline health** — DLQ event count, replay success/failure
+- **Latency breakdown** — p50/p95/p99 processing and payment duration
+
 ### Enable Tracing
 
 ```bash
@@ -408,15 +430,30 @@ OTEL_ENABLED=true JAEGER_ENDPOINT=http://jaeger:14250 npm run dev
 }
 ```
 
-### Key Metrics
+### Prometheus Metrics
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `orders_created_total` | Counter | Total orders placed |
-| `payment_success_ratio` | Gauge | Payment success rate |
-| `kafka_consumer_lag` | Gauge | Messages behind per group |
-| `dlq_messages_total` | Counter | Messages sent to DLQ |
-| `http_request_duration_ms` | Histogram | API latency |
+Every service exposes a `/metrics` endpoint (port 4001–4007) scraped by Prometheus. All metrics are prefixed `kafka_orders_`:
+
+| Metric | Type | Service | Description |
+|--------|------|---------|-------------|
+| `kafka_orders_created_total` | Counter | Order | Total orders placed |
+| `kafka_orders_cancelled_total` | Counter | Order | Total orders cancelled |
+| `kafka_orders_outbox_published_total` | Counter | Order | Outbox events published to Kafka |
+| `kafka_orders_rate_limit_hits_total` | Counter | Order | Requests rejected by rate limiter |
+| `kafka_orders_processing_duration_seconds` | Histogram | Order | Order processing latency (p50/p95/p99) |
+| `kafka_orders_stock_reserved_total` | Counter | Inventory | Total stock reservations |
+| `kafka_orders_stock_released_total` | Counter | Inventory | Total stock releases |
+| `kafka_orders_stock_reservation_failures_total` | Counter | Inventory | Failed stock reservations |
+| `kafka_orders_inventory_checks_total` | Counter | Inventory | Inventory stock checks |
+| `kafka_orders_payments_processed_total` | Counter | Payment | Successful payments |
+| `kafka_orders_payments_failed_total` | Counter | Payment | Failed payments |
+| `kafka_orders_payment_duration_seconds` | Histogram | Payment | Payment processing latency |
+| `kafka_orders_notifications_sent_total` | Counter | Notification | Notifications dispatched |
+| `kafka_orders_analytics_events_total` | Counter | Analytics | Analytics events recorded |
+| `kafka_orders_audit_events_total` | Counter | Audit | Audit events recorded |
+| `kafka_orders_dlq_events_stored_total` | Counter | DLQ Replay | Events sent to DLQ |
+| `kafka_orders_dlq_events_replayed_total` | Counter | DLQ Replay | Events replayed from DLQ |
+| `kafka_orders_dlq_replay_failures_total` | Counter | DLQ Replay | Failed replay attempts |
 
 ---
 
@@ -465,6 +502,8 @@ postgres:5432                   running
 redis:6379                      running
 schema-registry:8081            running
 jaeger:16686                    running
+prometheus:9090                 running
+grafana:3001                    running
 kafka-ui:8080                   running
 order-service:4001              running
 inventory-service:4002          running
@@ -485,6 +524,8 @@ frontend:3000                   running
 | **Kafka UI** | http://localhost:8080 | — |
 | **Jaeger Tracing** | http://localhost:16686 | — |
 | **Schema Registry** | http://localhost:8081 | — |
+| **Prometheus** | http://localhost:9090 | — |
+| **Grafana** | http://localhost:3001 | admin/admin |
 | **DLQ Replay API** | http://localhost:4007/dlq/events | — |
 
 ### Test the Order Flow
@@ -617,7 +658,7 @@ kubectl rollout status deployment/frontend -n order-system
 The GitHub Actions pipeline (`kafka-order-system/.github/workflows/ci-cd.yml`):
 
 ```mermaid
-graph LR
+flowchart LR
     A[Push to main] --> B[Test all services]
     B --> C[Build Docker images]
     C --> D[Push to Registry]
@@ -636,22 +677,30 @@ graph LR
 | **Jaeger** | http://localhost:16686 | Distributed tracing across all services |
 | **Kafka UI** | http://localhost:8080 | Topics, partitions, consumer groups, offsets |
 | **Schema Registry** | http://localhost:8081 | Avro schema versions and compatibility |
-| **Grafana** | (configure your own) | Orders/sec, lag, DLQ count, payment success rate |
+| **Prometheus** | http://localhost:9090 | Metric collection + querying (PromQL) |
+| **Grafana** | http://localhost:3001 | Full dashboard suite (pre-built JSON) |
 
-### Recommended Grafana Panels
+### Pre-Built Grafana Dashboard
+
+A complete dashboard (`monitoring/grafana/dashboards/kafka-orders-system.json`) is included with these panels:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Orders Created (last 24h)    │  Payment Success Rate       │
-│  [Sparkline: ▁▂▃▅▇▆▄▃]        │  [Gauge: 90%]              │
+│  Orders Created — 24h Sparkline   │  Payment Success Rate   │
+│  [Time series: kafka_orders_]     │  [Gauge: 92.3%]         │
 ├─────────────────────────────────────────────────────────────┤
-│  Kafka Consumer Lag           │  DLQ Events by Error Type   │
-│  [Bar chart by group]         │  [Pie chart]                │
+│  Orders by Status                  │  Rate Limit Hits       │
+│  [Bar chart: PENDING / CANCELLED]  │  [Stat: last hour]     │
 ├─────────────────────────────────────────────────────────────┤
-│  HTTP Latency (p50/p95/p99)   │  Service CPU/Memory         │
-│  [Line chart]                 │  [Grid of gauges]           │
+│  Payment Duration (p50/p95/p99)    │  Processing Duration   │
+│  [Line chart: 0.2s / 0.5s / 1.0s] │  [Line chart: latency] │
+├─────────────────────────────────────────────────────────────┤
+│  Top Service Metrics               │  DLQ Event Summary     │
+│  [Table: all kafka_orders_*]       │  [Stat: stored/replayed]│
 └─────────────────────────────────────────────────────────────┘
 ```
+
+Import from Grafana UI: **Dashboards → Import → Upload `monitoring/grafana/dashboards/kafka-orders-system.json`**
 
 ---
 
@@ -756,8 +805,18 @@ kafka-event-driven-order-system-architecture/
 │   │   ├── Dockerfile
 │   │   └── package.json
 │   │
+│   ├── monitoring/                        # Prometheus + Grafana
+│   │   ├── prometheus/
+│   │   │   └── prometheus.yml            # Scrape config (all 7 services)
+│   │   └── grafana/
+│   │       ├── datasources/
+│   │       │   └── prometheus.yml        # Grafana → Prometheus datasource
+│   │       └── dashboards/
+│   │           ├── dashboard.yaml        # Dashboard auto-provisioning
+│   │           └── kafka-orders-system.json  # Pre-built order monitoring
+│   │
 │   ├── docker/                            # Docker Compose
-│   │   ├── docker-compose.yml            # Full stack (16 containers)
+│   │   ├── docker-compose.yml            # Full stack (18 containers)
 │   │   └── init-multi-db.sh             # PostgreSQL multi-database init
 │   │
 │   ├── kubernetes/                        # Kubernetes manifests
@@ -855,11 +914,10 @@ Contributions are welcome! This project is designed to be a learning resource an
 
 ### Ideas for Contributions
 
-- **Prometheus metrics** — Add `/metrics` endpoints to each service
-- **Grafana dashboards** — Pre-built JSON dashboards for order/payment monitoring
 - **End-to-end tests** — Integration tests with Testcontainers
 - **gRPC** — Internal service-to-service gRPC for synchronous paths
 - **Circuit breaker** — More sophisticated circuit breaker with half-open state
+- **Alerting rules** — Prometheus alerting rules for payment failures, high consumer lag, DLQ growth
 
 ---
 

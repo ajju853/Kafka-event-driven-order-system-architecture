@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { Redis } from "ioredis";
 import { logger } from "../utils/logger";
+import { stockReserved, stockReleased, stockReservationFailures, inventoryChecks } from "../metrics";
 
 const CACHE_TTL = 3600;
 
@@ -29,6 +30,7 @@ export class InventoryService {
   }
 
   async checkStock(productId: string, quantity: number): Promise<boolean> {
+    inventoryChecks.inc();
     const result = await this.pool.query(
       "SELECT available_quantity FROM products WHERE id = $1",
       [productId]
@@ -64,6 +66,7 @@ export class InventoryService {
 
       if (failures.length > 0) {
         await client.query("ROLLBACK");
+        stockReservationFailures.inc(failures.length);
         return { success: false, failures };
       }
 
@@ -85,6 +88,7 @@ export class InventoryService {
         logger.info("Stock reserved", { productId: item.productId, quantity: item.quantity, orderId });
       }
 
+      stockReserved.inc(items.length);
       return { success: true, failures: [] };
     } catch (error) {
       await client.query("ROLLBACK");
@@ -111,6 +115,7 @@ export class InventoryService {
         [orderId]
       );
       await client.query("COMMIT");
+      stockReleased.inc(items.length);
       logger.info("Stock released for order", { orderId });
     } catch (error) {
       await client.query("ROLLBACK");

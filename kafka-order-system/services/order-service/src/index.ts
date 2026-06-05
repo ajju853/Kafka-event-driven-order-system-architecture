@@ -19,6 +19,7 @@ import {
 } from "./controllers/order-controller";
 import { logger } from "./utils/logger";
 import { initializeTracing } from "./utils/tracing";
+import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
   initializeTracing();
@@ -37,6 +38,10 @@ async function main(): Promise<void> {
   );
 
   app.get("/health", healthCheck);
+  app.get("/metrics", async (_req, res) => {
+    res.set("Content-Type", getMetricsContentType());
+    res.send(await getMetrics());
+  });
 
   app.post("/api/orders", createOrder);
   app.get("/api/orders", listOrders);

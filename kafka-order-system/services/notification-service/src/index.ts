@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { config } from "./config";
 import { OrderEventConsumer } from "./consumers/order-consumer";
 import { logger } from "./utils/logger";
+import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
   const app = express();
@@ -11,6 +12,10 @@ async function main(): Promise<void> {
   app.use(cors());
   app.use(express.json());
 
+  app.get("/metrics", async (_req, res) => {
+    res.set("Content-Type", getMetricsContentType());
+    res.send(await getMetrics());
+  });
   app.get("/health", (_req, res) => {
     res.json({
       service: "notification-service",

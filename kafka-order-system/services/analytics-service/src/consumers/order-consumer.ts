@@ -4,6 +4,7 @@ import { config } from "../config";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import { EVENT_TOPICS } from "@kafka-order-system/shared";
+import { metricsRecorded } from "../metrics";
 
 export class AnalyticsConsumer {
   private consumer: Consumer;
@@ -65,6 +66,7 @@ export class AnalyticsConsumer {
       }
 
       await this.markProcessed(eventId);
+      metricsRecorded.inc();
       logger.debug("Analytics event processed", { topic, eventId });
     } catch (error) {
       logger.error("Failed to process analytics event", {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import Redis from "ioredis";
 import { logger } from "../utils/logger";
+import { rateLimitHits } from "../metrics";
 
 const WINDOW_MS = 60 * 1000;
 const MAX_REQUESTS = 100;
@@ -25,6 +26,7 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     res.setHeader("X-RateLimit-Reset", Math.ceil((Date.now() + ttl) / 1000));
 
     if (current > MAX_REQUESTS) {
+      rateLimitHits.inc();
       res.status(429).json({
         error: "Too many requests",
         message: `Rate limit exceeded. Try again in ${Math.ceil(ttl / 1000)} seconds.`,

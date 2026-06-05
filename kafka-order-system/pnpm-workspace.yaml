@@ -1,0 +1,5 @@
+packages:
+  - "shared"
+  - "services/*"
+  - "frontend"
+linkWorkspacePackages: true

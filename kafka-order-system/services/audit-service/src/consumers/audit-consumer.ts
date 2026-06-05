@@ -4,6 +4,7 @@ import { config } from "../config";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import { EVENT_TOPICS } from "@kafka-order-system/shared";
+import { auditEventsRecorded } from "../metrics";
 
 const ALL_TOPICS = Object.values(EVENT_TOPICS);
 
@@ -70,6 +71,7 @@ export class AuditConsumer {
         ]
       );
 
+      auditEventsRecorded.inc();
       logger.debug("Audit log recorded", { eventId, eventType, topic });
     } catch (error) {
       logger.error("Failed to record audit log", {

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -309,6 +307,47 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    networks:
+      - kafka-net
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    hostname: prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      dlq-replay-service:
+        condition: service_started
+    networks:
+      - kafka-net
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    hostname: grafana
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      prometheus:
+        condition: service_started
     networks:
       - kafka-net
 

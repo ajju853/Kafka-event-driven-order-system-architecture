@@ -42,18 +42,49 @@ In Docker Compose, tracing is enabled by default for `payment-service` and can b
 
 ## Metrics (Prometheus + Grafana)
 
-Each service exposes a `/metrics` endpoint (or `/health` for basic status). Key metrics:
+Every service exposes a `/metrics` endpoint scraped by Prometheus. The shared prom-client registry also collects default process metrics (CPU, memory, event loop lag).
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `orders_created_total` | Counter | Total orders created |
-| `orders_cancelled_total` | Counter | Total orders cancelled |
-| `payment_success_total` | Counter | Successful payments |
-| `payment_failed_total` | Counter | Failed payments |
-| `kafka_messages_produced_total` | Counter | Messages published |
-| `kafka_consumer_lag` | Gauge | Consumer lag per group |
-| `dlq_messages_total` | Counter | Messages sent to DLQ |
-| `http_request_duration_ms` | Histogram | API latency |
+### Architecture
+
+```
+Prometheus (scrape /metrics every 15s)
+  ├── order-service:4001/metrics
+  ├── inventory-service:4002/metrics
+  ├── notification-service:4003/metrics
+  ├── analytics-service:4004/metrics
+  ├── audit-service:4005/metrics
+  ├── payment-service:4006/metrics
+  └── dlq-replay-service:4007/metrics
+       │
+       ▼
+Grafana (http://localhost:3001)
+  └── Pre-provisioned dashboard: "Kafka Order System"
+```
+
+### Metric Reference
+
+| Metric | Type | Labels | Service |
+|--------|------|--------|---------|
+| `kafka_orders_created_total` | Counter | — | order-service |
+| `kafka_orders_cancelled_total` | Counter | — | order-service |
+| `kafka_orders_outbox_published_total` | Counter | — | order-service |
+| `kafka_orders_rate_limit_hits_total` | Counter | — | order-service |
+| `kafka_orders_processing_duration_seconds` | Histogram | — | order-service |
+| `kafka_orders_stock_reserved_total` | Counter | — | inventory-service |
+| `kafka_orders_stock_released_total` | Counter | — | inventory-service |
+| `kafka_orders_stock_reservation_failures_total` | Counter | — | inventory-service |
+| `kafka_orders_inventory_checks_total` | Counter | — | inventory-service |
+| `kafka_orders_notifications_sent_total` | Counter | — | notification-service |
+| `kafka_orders_analytics_events_total` | Counter | — | analytics-service |
+| `kafka_orders_audit_events_total` | Counter | — | audit-service |
+| `kafka_orders_payments_processed_total` | Counter | — | payment-service |
+| `kafka_orders_payments_failed_total` | Counter | — | payment-service |
+| `kafka_orders_payment_duration_seconds` | Histogram | — | payment-service |
+| `kafka_orders_dlq_events_stored_total` | Counter | — | dlq-replay-service |
+| `kafka_orders_dlq_events_replayed_total` | Counter | — | dlq-replay-service |
+| `kafka_orders_dlq_replay_failures_total` | Counter | — | dlq-replay-service |
+| `process_resident_memory_bytes` | Gauge | service | all (default) |
+| `process_cpu_seconds_total` | Counter | service | all (default) |
 
 ## Schema Registry
 
@@ -76,11 +107,22 @@ curl -X POST http://localhost:8081/subjects/order-created-value/versions \
   -d '{"schema": "{\"type\":\"record\",...}"}'
 ```
 
-## Grafana Dashboards
+## Grafana Dashboard
 
-Recommended dashboards:
+A pre-provisioned dashboard (`monitoring/grafana/dashboards/kafka-orders-system.json`) is automatically loaded when Grafana starts. It includes:
 
-1. **Order System Overview** — orders/sec, payment success rate, Kafka lag
-2. **DLQ Monitor** — DLQ count by error type, replay rate
-3. **Service Health** — CPU, memory, request latency per service
-4. **Kafka Performance** — Partition leaders, bytes in/out, consumer offsets
+| Panel | Metrics |
+|-------|---------|
+| Orders Created / sec | `rate(kafka_orders_created_total[1m])` |
+| Payment Success vs Failure | `rate(kafka_orders_payments_processed_total[1m])`, `rate(kafka_orders_payments_failed_total[1m])` |
+| Payment Duration (p50/p95/p99) | `histogram_quantile(..., kafka_orders_payment_duration_seconds_bucket)` |
+| Inventory Stock Reserved / sec | `rate(kafka_orders_stock_*_total[1m])` |
+| DLQ Events | `kafka_orders_dlq_events_stored_total`, `rate(kafka_orders_dlq_events_replayed_total[5m])` |
+| Notifications Sent / sec | `rate(kafka_orders_notifications_sent_total[1m])` |
+| HTTP Requests / sec | `rate(http_requests_total[1m])` |
+| Audit Events / sec | `rate(kafka_orders_audit_events_total[1m])` |
+| Rate Limit Hits / sec | `rate(kafka_orders_rate_limit_hits_total[1m])` |
+| Outbox Published / sec | `rate(kafka_orders_outbox_published_total[1m])` |
+| Memory Usage (per service) | `process_resident_memory_bytes` |
+
+Access Grafana at `http://localhost:3001` (default credentials: `admin/admin`).

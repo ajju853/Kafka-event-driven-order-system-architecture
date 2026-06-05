@@ -7,6 +7,7 @@ import { DLQConsumer } from "./services/dlq-consumer";
 import { DLQReplayService } from "./services/dlq-replay";
 import { createDLQController } from "./controllers/dlq-controller";
 import { logger } from "./utils/logger";
+import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
 
 async function main() {
   logger.info("Starting DLQ replay service...");
@@ -44,6 +45,7 @@ async function main() {
   await dlqConsumer.start();
 
   const replayService = new DLQReplayService(pool);
+  await replayService.connect();
   const controller = createDLQController(replayService);
 
   const app = express();
@@ -51,6 +53,10 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
+  app.get("/metrics", async (_req, res) => {
+    res.set("Content-Type", getMetricsContentType());
+    res.send(await getMetrics());
+  });
   app.get("/health", async (_req, res) => {
     try {
       await pool.query("SELECT 1");

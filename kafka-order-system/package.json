@@ -1,0 +1,36 @@
+{
+  "name": "kafka-order-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event-driven order management system with Kafka, microservices, and Next.js frontend",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:order\" \"npm run dev:inventory\" \"npm run dev:notification\" \"npm run dev:analytics\" \"npm run dev:audit\"",
+    "dev:order": "npm run dev --workspace=services/order-service",
+    "dev:inventory": "npm run dev --workspace=services/inventory-service",
+    "dev:notification": "npm run dev --workspace=services/notification-service",
+    "dev:analytics": "npm run dev --workspace=services/analytics-service",
+    "dev:audit": "npm run dev --workspace=services/audit-service",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "postinstall": "npm run build --workspace=shared",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down"
+  },
+  "workspaces": [
+    "shared",
+    "services/order-service",
+    "services/inventory-service",
+    "services/notification-service",
+    "services/analytics-service",
+    "services/audit-service",
+    "services/payment-service",
+    "services/dlq-replay-service",
+    "frontend"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.0"
+  }
+}

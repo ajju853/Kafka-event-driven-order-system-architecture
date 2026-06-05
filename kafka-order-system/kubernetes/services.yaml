@@ -1,0 +1,499 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: order-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: kafka-order-system/order-service:latest
+          ports:
+            - containerPort: 4001
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4001"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: order-system
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 4001
+      targetPort: 4001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: order-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: kafka-order-system/inventory-service:latest
+          ports:
+            - containerPort: 4002
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4002"
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: order-system-config
+                  key: POSTGRES_DB_INVENTORY
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: order-system
+spec:
+  selector:
+    app: inventory-service
+  ports:
+    - port: 4002
+      targetPort: 4002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: order-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: kafka-order-system/notification-service:latest
+          ports:
+            - containerPort: 4003
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+          env:
+            - name: PORT
+              value: "4003"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: order-system
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 4003
+      targetPort: 4003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: order-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: kafka-order-system/analytics-service:latest
+          ports:
+            - containerPort: 4004
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4004"
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: order-system-config
+                  key: POSTGRES_DB_ANALYTICS
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: order-system
+spec:
+  selector:
+    app: analytics-service
+  ports:
+    - port: 4004
+      targetPort: 4004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: order-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+    spec:
+      containers:
+        - name: audit-service
+          image: kafka-order-system/audit-service:latest
+          ports:
+            - containerPort: 4005
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4005"
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: order-system-config
+                  key: POSTGRES_DB_AUDIT
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  namespace: order-system
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - port: 4005
+      targetPort: 4005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: order-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: kafka-order-system/payment-service:latest
+          ports:
+            - containerPort: 4006
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4006"
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: order-system-config
+                  key: POSTGRES_DB_PAYMENT
+            - name: JAEGER_ENDPOINT
+              value: "http://jaeger:14250"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4006
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: order-system
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 4006
+      targetPort: 4006
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dlq-replay-service
+  namespace: order-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dlq-replay-service
+  template:
+    metadata:
+      labels:
+        app: dlq-replay-service
+    spec:
+      containers:
+        - name: dlq-replay-service
+          image: kafka-order-system/dlq-replay-service:latest
+          ports:
+            - containerPort: 4007
+          envFrom:
+            - configMapRef:
+                name: order-system-config
+            - secretRef:
+                name: order-system-secrets
+          env:
+            - name: PORT
+              value: "4007"
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: order-system-config
+                  key: POSTGRES_DB_DLQ
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4007
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dlq-replay-service
+  namespace: order-system
+spec:
+  selector:
+    app: dlq-replay-service
+  ports:
+    - port: 4007
+      targetPort: 4007
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: order-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:1.55
+          ports:
+            - containerPort: 16686
+            - containerPort: 14250
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: order-system
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      port: 16686
+      targetPort: 16686
+    - name: grpc
+      port: 14250
+      targetPort: 14250
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: order-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: kafka-order-system/frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_GATEWAY
+              value: "http://order-service:4001"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: order-system
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000

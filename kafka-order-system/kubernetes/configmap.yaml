@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-system-config
+  namespace: order-system
+data:
+  KAFKA_BROKER: "kafka:29092"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "orderuser"
+  POSTGRES_DB: "orderdb"
+  POSTGRES_DB_INVENTORY: "inventorydb"
+  POSTGRES_DB_ANALYTICS: "analyticsdb"
+  POSTGRES_DB_AUDIT: "auditdb"
+  POSTGRES_DB_PAYMENT: "paymentdb"
+  POSTGRES_DB_DLQ: "dlqdb"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+  NODE_ENV: "production"

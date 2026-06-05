@@ -1,381 +1,269 @@
-# Kafka Event-Driven Order Management System
+<div align="center">
 
-<h3 align="center">
-  Production-Grade Microservices · Event-Driven Architecture · Cloud-Native
-</h3>
+<img src="https://capsule-render.vercel.app/api?type=venom&color=gradient&customColorList=0,2,2,5,30&height=220&section=header&text=Kafka%20Order%20System&fontSize=48&fontColor=fff&animation=fadeIn&fontAlignY=40&desc=Production-Grade%20Event-Driven%20Microservices%20Architecture&descAlignY=62&descAlign=50&descSize=16" width="100%"/>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white" alt="Node.js">
-  <img src="https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Apache_Kafka-7.6-231F20?logo=apache-kafka&logoColor=white" alt="Kafka">
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white" alt="Redis">
-  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white" alt="Kubernetes">
-  <img src="https://img.shields.io/badge/OpenTelemetry-000000?logo=opentelemetry&logoColor=white" alt="OpenTelemetry">
-  <img src="https://img.shields.io/badge/Jaeger-60C0E0?logo=jaeger&logoColor=white" alt="Jaeger">
-  <img src="https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white" alt="Prometheus">
-  <img src="https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white" alt="Grafana">
-  <img src="https://img.shields.io/badge/Next.js-14-000000?logo=next.js&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
-</p>
+</div>
 
-<p align="center">
-  A <strong>production-grade</strong> event-driven microservices platform for order management — built with the patterns that power real-world distributed systems at <strong>Uber</strong>, <strong>Netflix</strong>, and <strong>Shopify</strong>.
-</p>
+<div align="center">
 
-<hr>
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│   7 Microservices  ·  8 Kafka Topics  ·  Kubernetes + HPA  ·  Zero Data Loss  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-## Table of Contents
+[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-7.6-231F20?style=flat-square&logo=apachekafka&logoColor=white)](https://kafka.apache.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-HPA-326CE5?style=flat-square&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Jaeger-000000?style=flat-square&logo=opentelemetry&logoColor=white)](https://opentelemetry.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F7DF1E?style=flat-square)](LICENSE)
 
-- [📋 Overview](#-overview)
-- [🏗️ Architecture](#-architecture)
-- [✨ Key Features](#-key-features)
-- [📦 Services](#-services)
-- [⚡ Event Flow](#-event-flow)
-- [🛡️ Reliability Patterns](#️-reliability-patterns)
-- [🔬 Observability](#-observability)
-- [🔒 Security](#-security)
-- [🚀 Quick Start](#-quick-start)
-- [🧪 Development](#-development)
-- [☸️ Kubernetes Deployment](#️-kubernetes-deployment)
-- [📊 Monitoring](#-monitoring)
-- [📁 Project Structure](#-project-structure)
-- [🧠 What Makes This Production-Grade?](#-what-makes-this-production-grade)
-- [📖 Documentation](#-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
+<br/>
+
+> **"The patterns that power Uber's payment system, Netflix's content pipeline, and Shopify's order processing — implemented from scratch."**
+
+<br/>
+
+[**🚀 Quick Start**](#-quick-start) · [**🏗️ Architecture**](#️-architecture) · [**⚡ Event Flow**](#-event-flow) · [**🛡️ Reliability**](#️-reliability-patterns) · [**🔬 Observability**](#-observability) · [**☸️ Kubernetes**](#️-kubernetes-deployment)
+
+</div>
 
 ---
 
-## 📋 Overview
+## The Problem This Solves
 
-This is not a toy project. This is a **fully-featured, production-grade distributed system** built from the ground up to demonstrate enterprise-grade architectural patterns. It processes asynchronous order workflows across **7 independent microservices** connected through Apache Kafka, with fault tolerance, eventual consistency, and cloud-native deployment.
+Modern platforms coordinating **orders → inventory → payments → notifications → analytics → audit** face three hard problems in production:
 
-### What Problem Does It Solve?
+| Problem | Naive Approach | This System |
+|---------|---------------|-------------|
+| **Dual-write** | Write to DB + Kafka separately | Transactional Outbox — atomic, zero loss |
+| **Cascading failures** | Sync HTTP between services | Async Kafka — services never wait on each other |
+| **Bad message loops** | Retry forever | 3× exponential backoff → DLQ → human replay |
 
-Modern e-commerce platforms need to coordinate multiple services — order management, inventory, payments, notifications, analytics, auditing — without data loss, without tight coupling, and without a single point of failure. This system solves that using **event-driven architecture** with Kafka as the backbone.
+This is not a tutorial project. Every architecture decision here maps to a documented failure mode that has taken down real systems in production.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                                  │
-│               Next.js Frontend (port 3000)                           │
-│                  Redux Toolkit · TanStack Query                      │
-└──────────────────────────────┬───────────────────────────────────────┘
-                               │ REST / HTTPS
-                               ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                      API GATEWAY LAYER                               │
-│                    Order Service (port 4001)                         │
-│                                                                      │
-│    ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐    │
-│    │  JWT Auth    │  │ Rate Limiter │  │ Request Logging      │    │
-│    │  (Bearer)    │  │ (Redis SW)   │  │ (Morgan + Logger)    │    │
-│    └──────────────┘  └──────────────┘  └──────────────────────┘    │
-│                                                                      │
-│    ┌──────────────────────────────────────────────────────────┐     │
-│    │              Transactional Outbox Pattern                │     │
-│    │   ┌─────────────┐  ┌────────────────┐  ┌──────────────┐ │     │
-│    │   │ Order CRUD  │  │ Outbox Writer  │  │ Outbox       │ │     │
-│    │   │ (Postgres)  │──▶ (Same Tx)      │──▶ Publisher    │─┼────┐│
-│    │   └─────────────┘  └────────────────┘  │ (Poller)    │ │    ││
-│    │                                        └──────────────┘ │    ││
-│    └──────────────────────────────────────────────────────────┘    ││
-└────────────────────────────────────┬───────────────────────────────┘│
-                                     │ Produce Events                 ││
-                                     ▼                               ││
-        ╔══════════════════════════════════════════════════════════════╗│
-        ║                 MESSAGE BROKER LAYER                       ║│
-        ║               Apache Kafka 7.6 (3 Partitions)               ║▼
-        ║                                                             ║
-        ║   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ║
-        ║   │  order-  │  │inventory-│  │ payment- │  │  dlq-    │  ║
-        ║   │ created  │  │ reserved │  │processed │  │ events   │  ║
-        ║   └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  ║
-        ║   ┌────┴────┐  ┌────┴────┐  ┌────┴────┐  ┌────┴────┐     ║
-        ║   │ payment │  │inventory│  │payment  │  │inventory│     ║
-        ║   │ -failed │  │-release │  │-failed  │  │-release │     ║
-        ║   └─────────┘  └─────────┘  └─────────┘  └─────────┘     ║
-        ╚═══════════════════╤═══════════╤═══════════════╤═════════════╝
-                            │           │               │
-       ┌────────────────────┘    ┌──────┘      ┌────────┘
-       ▼                         ▼              ▼
-┌────────────────┐   ┌────────────────┐   ┌────────────────┐
-│ INVENTORY      │   │ PAYMENT        │   │ NOTIFICATION   │
-│ SERVICE        │   │ SERVICE        │   │ SERVICE        │
-│ (port 4002)    │   │ (port 4006)    │   │ (port 4003)    │
-│                │   │                │   │                │
-│ PostgreSQL     │   │ PostgreSQL     │   │ Email / SMS    │
-│ Redis Cache    │   │ 90% Success    │   │ / Push         │
-│ Lock Inventory │   │ Simulated      │   │                 │
-└───────┬────────┘   └───────┬────────┘   └────────────────┘
-        │                    │
-        ▼                    ▼
-┌────────────────┐   ┌────────────────┐   ┌────────────────┐
-│ ANALYTICS      │   │ AUDIT          │   │ DLQ REPLAY     │
-│ SERVICE        │   │ SERVICE        │   │ SERVICE        │
-│ (port 4004)    │   │ (port 4005)    │   │ (port 4007)    │
-│                │   │                │   │                │
-│ PostgreSQL     │   │ PostgreSQL     │   │ PostgreSQL     │
-│ Daily Metrics  │   │ Immutable Log  │   │ View/Replay    │
-│ Revenue Stats  │   │ Event History  │   │ Failed Events  │
-└────────────────┘   └────────────────┘   └────────────────┘
+                            ┌──────────────────────────────────┐
+                            │        FRONTEND LAYER            │
+                            │   Next.js 14  ·  port 3000       │
+                            │   Redux Toolkit · TanStack Query │
+                            └──────────────┬───────────────────┘
+                                           │ REST / HTTPS
+                                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          ORDER SERVICE  ·  port 4001                     │
+│                         (API Gateway + Event Producer)                   │
+│                                                                          │
+│   ┌─────────────┐   ┌──────────────┐   ┌──────────────────────────┐    │
+│   │  JWT Auth   │   │ Rate Limiter │   │  Transactional Outbox    │    │
+│   │  Bearer     │   │ Redis SW     │   │  ┌──────────┐ ┌────────┐ │    │
+│   │  Validation │   │ 100 req/min  │   │  │ Order DB │→│ Outbox │ │    │
+│   └─────────────┘   └──────────────┘   │  │  (same   │ │ Writer │ │    │
+│                                         │  │   tx)    │ │        │ │    │
+│                                         │  └──────────┘ └───┬────┘ │    │
+│                                         │              ┌────▼────┐  │    │
+│                                         │              │ Outbox  │  │    │
+│                                         │              │ Poller  │  │    │
+│                                         └──────────────┴────┬────┘──┘    │
+└──────────────────────────────────────────────────┬──────────┘            │
+                                                   │ Produce Events        │
+                                                   ▼                      │
+        ╔═════════════════════════════════════════════════════════════════╗│
+        ║              APACHE KAFKA  ·  8 TOPICS  ·  3 PARTITIONS        ║│
+        ║                                                                 ║▼
+        ║  order-created  │  inventory-reserved  │  payment-processed    ║
+        ║  order-cancelled│  inventory-failed    │  payment-failed       ║
+        ║  inventory-release                     │  dlq-events (30d)     ║
+        ╚══════════╤═══════════════╤═════════════╤════════════════════════╝
+                   │               │             │
+       ┌───────────┘    ┌──────────┘    ┌────────┘
+       ▼                ▼               ▼
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│  INVENTORY  │  │   PAYMENT   │  │NOTIFICATION │  │  ANALYTICS  │
+│  port 4002  │  │  port 4006  │  │  port 4003  │  │  port 4004  │
+│             │  │             │  │             │  │             │
+│ PostgreSQL  │  │ PostgreSQL  │  │ Email/SMS   │  │ PostgreSQL  │
+│ Redis Cache │  │ 90% success │  │ Push notify │  │ Daily stats │
+│ Reservations│  │ Simulated   │  │             │  │ Revenue KPIs│
+└─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘
+       ▼                                                     ▼
+┌─────────────┐                                    ┌─────────────┐
+│    AUDIT    │                                    │ DLQ REPLAY  │
+│  port 4005  │                                    │  port 4007  │
+│             │                                    │             │
+│ PostgreSQL  │                                    │ PostgreSQL  │
+│ Immutable   │                                    │ View/Replay │
+│ Event log   │                                    │ Failed msgs │
+└─────────────┘                                    └─────────────┘
 
-┌──────────────────────────────────────────────────────────────────────┐
-│                       OBSERVABILITY LAYER                           │
-│                                                                      │
-│   ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐   │
-│   │   Jaeger     │  │   Kafka UI   │  │ Schema Registry        │   │
-│   │  Distributed │  │   (port      │  │ (port 8081)            │   │
-│   │  Tracing     │  │   8080)      │  │ Avro · Versioned       │   │
-│   │  (port 16686)│  │              │  │ Backward Compat        │   │
-│   └──────────────┘  └──────────────┘  └────────────────────────┘   │
-│                                                                      │
-│   ┌────────────────────────────────────────────────────────┐        │
-│   │  Prometheus (port 9090)  ◄──  /metrics (all services)  │        │
-│   │  ┌──────────────────────────────────────────────────┐  │        │
-│   │  │  Grafana (port 3000/dashboards)                  │  │        │
-│   │  │  Order KPIs · Consumer Lag · DLQ Rate · Latency  │  │        │
-│   │  └──────────────────────────────────────────────────┘  │        │
-│   └────────────────────────────────────────────────────────┘        │
-└──────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        OBSERVABILITY                             │
+│  Jaeger:16686  ·  Kafka UI:8080  ·  Prometheus:9090  ·  Grafana  │
+└──────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## ✨ Key Features
-
-### 🔄 Event-Driven Architecture
-- Apache Kafka as the central nervous system — 8 topics, 7 consumer groups
-- All inter-service communication is asynchronous and fault-tolerant
-- No synchronous HTTP calls between services (no cascading failures)
-
-### 📦 Transactional Outbox Pattern
-- Order + event written in a **single database transaction**
-- `FOR UPDATE SKIP LOCKED` polling ensures concurrent safety
-- No dual-write problems, no lost events, no distributed transactions needed
-
-### 🛡️ Consumer Idempotency (Effectively-Once)
-- Every consumer maintains a `processed_events` table
-- Duplicate events are detected by `event_id` (PK conflict) and silently skipped
-- Achieves **Effectively-Once** semantics without Kafka transaction overhead
-
-### 💀 Dead Letter Queue + Replay
-- All failed events land in `dlq-events` topic after retry exhaustion
-- **DLQ Replay Service** (port 4007) provides REST API to view and replay failed events
-- Operators can fix root cause → replay → verify — no data loss
-
-### 🔁 Exponential Backoff Retry
-- Initial delay: **5 seconds**
-- Multiplier: **3×** (5s → 15s → 45s)
-- Max retries: **3** (configurable per service)
-- Prevents thundering herd on failure recovery
-
-### 💳 Payment Processing
-- Dedicated Payment Service consumes `inventory-reserved` events
-- 90% simulated success rate (configurable)
-- On failure: publishes `payment-failed` + `inventory-release` to auto-rollback stock
-
-### 📈 Real-Time Analytics
-- Records every order/payment event with timestamps
-- Generates daily revenue summaries and payment success rates
-- Materialized metrics for dashboards
-
-### 📋 Immutable Audit Log
-- Every event is permanently recorded with full payload
-- Query by `order_id` or `event_type`
-- Supports compliance and debugging
-
-### 🚦 Rate Limiting
-- Redis sliding window algorithm — **100 requests/minute per IP**
-- X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset headers
-- Graceful degradation (allows request if Redis is down)
-
-### 🔐 JWT Authentication
-- Bearer token validation on all API routes
-- API key management via environment variables
-- Optional auth for public endpoints
-
-### 📊 Distributed Tracing
-- OpenTelemetry SDK + Jaeger all-in-one collector
-- Every HTTP request and Kafka message carries a **trace ID**
-- View complete request flow across all 7 services in Jaeger UI
-
-### 🧬 Schema Registry (Avro)
-- Confluent Schema Registry with versioned Avro schemas
-- `order-created-v1` → `order-created-v2` (backward compatible, added `couponCode`)
-- Backward compatibility ensures safe schema evolution
-
-### ☸️ Cloud-Native Deployment
-- Docker Compose for local development (full stack in one command)
-- Kubernetes manifests for production (Deployments, Services, HPA, Ingress)
-- GitHub Actions CI/CD pipeline (test → build → push → deploy)
 
 ---
 
 ## 📦 Services
 
-| # | Service | Port | Language | Database | Responsibilities |
-|---|---------|------|----------|----------|------------------|
-| 1 | **Order Service** (API Gateway) | `4001` | Node.js/TS | PostgreSQL + Redis | Auth, rate limiting, CRUD orders, outbox pattern, Kafka producer |
-| 2 | **Inventory Service** | `4002` | Node.js/TS | PostgreSQL + Redis | Stock management, reservation, Redis cache, release |
-| 3 | **Payment Service** | `4006` | Node.js/TS | PostgreSQL | Payment processing, transaction store, 90% success |
-| 4 | **Notification Service** | `4003` | Node.js/TS | — | Email/SMS/Push notifications (simulated) |
-| 5 | **Analytics Service** | `4004` | Node.js/TS | PostgreSQL | Order metrics, daily summaries, revenue stats |
-| 6 | **Audit Service** | `4005` | Node.js/TS | PostgreSQL | Immutable event log, query by order/type |
-| 7 | **DLQ Replay Service** | `4007` | Node.js/TS | PostgreSQL | View, search, and replay failed events |
+| # | Service | Port | Responsibilities |
+|---|---------|------|-----------------|
+| 1 | **Order Service** | `4001` | API gateway · JWT auth · rate limiting · Transactional Outbox · Kafka producer |
+| 2 | **Inventory Service** | `4002` | Stock reservations · Redis cache · release on rollback |
+| 3 | **Payment Service** | `4006` | Payment processing · 90% success simulation · publishes failure events |
+| 4 | **Notification Service** | `4003` | Email / SMS / Push on every state change |
+| 5 | **Analytics Service** | `4004` | Daily revenue metrics · order KPIs · success rates |
+| 6 | **Audit Service** | `4005` | Immutable event log · query by order or event type |
+| 7 | **DLQ Replay Service** | `4007` | Capture failed events · REST API to view and replay |
 
-### Supporting Infrastructure
+### Infrastructure
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Apache Kafka | 7.6 (Confluent) | Event bus with 3 partitions per topic |
-| Zookeeper | 7.6 | Kafka coordination |
-| PostgreSQL | 16 | Per-service databases (6 databases) |
-| Redis | 7 | Caching + rate limiting |
-| Schema Registry | 7.6 | Avro schema versioning |
-| Jaeger | 1.55 | Distributed tracing UI |
-| Kafka UI | Latest | Topic/consumer management |
-| Prometheus | Latest | Metrics collection + alerting |
-| Grafana | Latest | Dashboards + visualization |
+| Component | Version | Role |
+|-----------|---------|------|
+| Apache Kafka | 7.6 (Confluent) | Event bus · 3 partitions/topic |
+| PostgreSQL | 16 | Per-service isolation (6 databases) |
+| Redis | 7 | Caching + sliding-window rate limiter |
+| Schema Registry | 7.6 | Avro versioning · backward compatibility |
+| Jaeger | 1.55 | Distributed tracing across all 7 services |
+| Prometheus + Grafana | Latest | 18 custom metrics · pre-built dashboard |
 
 ---
 
 ## ⚡ Event Flow
 
-### Happy Path: Complete Order Lifecycle
+### Happy Path — Complete Order Lifecycle
 
-```mermaid
-sequenceDiagram
-    participant F as Frontend
-    participant OS as Order Service
-    participant K as Kafka
-    participant IS as Inventory Service
-    participant PS as Payment Service
-    participant NS as Notification Service
-    participant AS as Analytics Service
-    participant AU as Audit Service
-
-    F->>OS: POST /api/orders
-    OS->>OS: Save order + outbox event (DB Tx)
-    OS->>K: Publish order-created
-    K->>IS: Consume order-created
-    IS->>IS: Reserve inventory (Redis + PG)
-    IS->>K: Publish inventory-reserved
-    K->>PS: Consume inventory-reserved
-    PS->>PS: Process payment (90% success)
-    PS->>K: Publish payment-processed
-    K->>NS: Notify customer
-    K->>AS: Record metrics
-    K->>AU: Audit trail
-    K->>OS: Update order status
-    OS->>OS: Set status = PAYMENT_PROCESSED
-    OS-->>F: 201 Created (order response)
+```
+Frontend → Order Service
+              │
+              ├─ [1] Write order + outbox event (single DB transaction)
+              │
+              ▼
+         ── Kafka: order-created ──►  Inventory Service
+                                           │
+                                           ├─ [2] Reserve stock (Redis + PG)
+                                           │
+                                           ▼
+                                  ── Kafka: inventory-reserved ──► Payment Service
+                                                                         │
+                                                                         ├─ [3] Process payment
+                                                                         │
+                                                                         ▼
+                                                              ── Kafka: payment-processed ──►
+                                                                    Notification ✓
+                                                                    Analytics ✓
+                                                                    Audit ✓
+                                                                    Order (update status) ✓
 ```
 
-### Failure Path: Payment Fails → Auto-Rollback
+### Failure Path — Payment Fails → Auto-Rollback
 
-```mermaid
-sequenceDiagram
-    participant PS as Payment Service
-    participant K as Kafka
-    participant IS as Inventory Service
-    participant NS as Notification Service
-    participant AU as Audit Service
-
-    PS->>PS: Process payment → FAILED (10%)
-    PS->>K: Publish payment-failed
-    PS->>K: Publish inventory-release
-    K->>IS: Consume inventory-release
-    IS->>IS: Release reserved stock
-    K->>NS: Notify customer of failure
-    K->>AU: Audit payment failure
-    Note over PS,AU: Inventory is auto-rolled back
-    Note over PS,AU: No manual intervention needed
+```
+Payment Service  →  payment FAILED (10% of requests)
+      │
+      ├─ publish: payment-failed  ──►  Notification (customer email)
+      │                           ──►  Audit (failure record)
+      │
+      └─ publish: inventory-release  ──►  Inventory Service
+                                              │
+                                              └─ release reserved stock automatically
+                                                 ← no manual intervention needed
 ```
 
 ### DLQ Recovery Flow
 
-```mermaid
-sequenceDiagram
-    participant SVC as Any Service
-    participant K as Kafka
-    participant DLQ as DLQ Replay Service
-    participant OP as Operator
-
-    SVC->>SVC: Event processing fails after 3 retries
-    SVC->>K: Publish to dlq-events topic
-    K->>DLQ: Consume dlq-events
-    DLQ->>DLQ: Store in PostgreSQL (persistent)
-    OP->>DLQ: GET /dlq/events (list failures)
-    DLQ-->>OP: [ { eventId, error, topic, time } ]
-    OP->>OP: Investigate & fix root cause
-    OP->>DLQ: POST /dlq/replay/{eventId}
-    DLQ->>K: Re-publish to original topic
-    K->>SVC: Re-process successfully
-    DLQ->>DLQ: Mark as replayed=true
+```
+Any Service  →  event processing fails after 3 retries (5s → 15s → 45s)
+      │
+      └─ publish: dlq-events  ──►  DLQ Replay Service (stores in PostgreSQL)
+                                        │
+                                        ▼
+                               Operator: GET /dlq/events
+                                        │  (investigate root cause)
+                                        ▼
+                               Operator: POST /dlq/replay/{eventId}
+                                        │
+                                        └─ re-publish to original topic ──► re-process ✓
 ```
 
-### Kafka Topics & Event Types
+### Kafka Topics
 
-| Topic | Partitions | Retention | Producer | Consumers | Schema Version |
-|-------|-----------|-----------|----------|-----------|----------------|
-| `order-created` | 3 | 7 days | Order Service | Inventory, Notification, Analytics, Audit | `order-created-v1` |
-| `order-cancelled` | 3 | 7 days | Order Service | Inventory (release), Notification, Audit | `order-cancelled-v1` |
-| `inventory-reserved` | 3 | 7 days | Inventory Service | Payment, Notification, Analytics, Audit | `inventory-reserved-v1` |
-| `inventory-failed` | 3 | 7 days | Inventory Service | Notification, Audit | `inventory-failed-v1` |
-| `inventory-release` | 3 | 7 days | Payment/Order Service | Inventory Service | `inventory-release-v1` |
-| `payment-processed` | 3 | 7 days | Payment Service | Notification, Analytics, Audit, Order | `payment-processed-v1` |
-| `payment-failed` | 3 | 7 days | Payment Service | Notification, Audit, Inventory (release) | `payment-failed-v1` |
-| `dlq-events` | 1 | 30 days | All services | DLQ Replay Service | — |
+| Topic | Partitions | Retention | Producers | Consumers |
+|-------|-----------|-----------|-----------|-----------|
+| `order-created` | 3 | 7 days | Order | Inventory, Notification, Analytics, Audit |
+| `order-cancelled` | 3 | 7 days | Order | Inventory (release), Notification, Audit |
+| `inventory-reserved` | 3 | 7 days | Inventory | Payment, Notification, Analytics, Audit |
+| `inventory-failed` | 3 | 7 days | Inventory | Notification, Audit |
+| `inventory-release` | 3 | 7 days | Payment, Order | Inventory |
+| `payment-processed` | 3 | 7 days | Payment | Notification, Analytics, Audit, Order |
+| `payment-failed` | 3 | 7 days | Payment | Notification, Audit, Inventory |
+| `dlq-events` | 1 | **30 days** | All services | DLQ Replay |
 
 ---
 
 ## 🛡️ Reliability Patterns
 
-This project implements the reliability patterns that power **Uber's payment system**, **Netflix's content pipeline**, and **Shopify's order processing**. Here's what each does and why it matters:
+Every pattern here solves a documented production failure mode:
 
-| Pattern | What It Does | Why It Matters | Implementation |
-|---------|-------------|----------------|----------------|
-| **Transaction Outbox** | Writes event + data in same DB transaction | Prevents dual-write problem — never lose an event | `outbox_events` table polled by `OutboxPublisher` with `FOR UPDATE SKIP LOCKED` |
-| **Consumer Idempotency** | Skips duplicate events | Safe retries even with Kafka at-least-once delivery | `processed_events` table with PK = `event_id` |
-| **Dead Letter Queue** | Captures unprocessable events | No data loss, operators can replay later | `dlq-events` topic consumed by DLQ Replay Service |
-| **Exponential Backoff** | Waits longer between retries | Prevents thundering herd, gives dependent services time to recover | `5s → 15s → 45s` backoff, max 3 retries |
-| **Circuit Breaker** | Stops retrying after budget exhausted | Prevents infinite loops and cascade failures | Max retry count per consumer config |
-| **Bulkhead** | Per-service connection pools | One service can't exhaust all DB connections | Each service has its own PostgreSQL pool (max 10-20 connections) |
-| **Saga Pattern** | Distributed rollback on failure | Maintains data consistency across services | Payment failure → auto-publish `inventory-release` |
-| **Idempotent Producer** | No duplicate Kafka messages | Safe producer retries without duplicates | Kafka `enable.idempotence=true` |
-
-### Exactly-Once Semantics
+### Transactional Outbox Pattern
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Exactly-Once Processing                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Kafka guarantees:        At-Least-Once                     │
-│                                                             │
-│  Producer guarantees:     Idempotent (no duplicates)        │
-│                                                             │
-│  Consumer guarantees:     Idempotent (duplicate detection)   │
-│                                                             │
-│  Application semantics:   Effectively-Once                  │
-│                                                             │
-│  How: Outbox pattern writes event and data atomically.     │
-│       Consumers check processed_events before handling.    │
-│       Duplicates are silently skipped.                     │
-│                                                             │
-│  Why not Kafka Exactly-Once?                                │
-│  Kafka's EOS (transactions + zombie fencing) adds          │
-│  significant complexity and performance overhead.          │
-│  Outbox + idempotency is simpler, portable, and proven.   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+❌ Naive approach:
+   db.save(order)          ← succeeds
+   kafka.publish(event)    ← crashes → event LOST FOREVER
+
+✅ This system:
+   BEGIN TRANSACTION
+     db.save(order)
+     db.save(outbox_event)  ← same transaction
+   COMMIT
+   → Outbox poller publishes to Kafka (FOR UPDATE SKIP LOCKED)
+   → Zero dual-write risk. Zero lost events.
 ```
+
+### Consumer Idempotency (Effectively-Once)
+
+```
+Kafka guarantees:   At-Least-Once delivery
+Producer:           Idempotent (enable.idempotence=true)
+Consumer:           processed_events table (PK = event_id)
+                    → duplicate detected → silently skipped
+
+Result:  Effectively-Once application semantics
+         without Kafka's expensive transaction overhead
+```
+
+### Saga Pattern (Distributed Rollback)
+
+```
+Payment FAILS
+    │
+    ├─ publish payment-failed
+    └─ publish inventory-release  ←  compensating transaction
+                                       Inventory Service consumes →
+                                       releases reserved stock
+                                       ← no 2PC, no distributed lock
+```
+
+### Full Reliability Matrix
+
+| Pattern | Problem Solved | Implementation |
+|---------|---------------|----------------|
+| **Transactional Outbox** | Dual-write / lost events | `outbox_events` table + `FOR UPDATE SKIP LOCKED` poller |
+| **Consumer Idempotency** | Duplicate processing | `processed_events` PK constraint on `event_id` |
+| **Dead Letter Queue** | Poison pill messages | `dlq-events` topic → DLQ Replay Service REST API |
+| **Exponential Backoff** | Thundering herd on failure | `5s → 15s → 45s`, max 3 retries, then DLQ |
+| **Saga Pattern** | Distributed consistency | Compensating events on payment/inventory failure |
+| **Bulkhead** | Connection pool exhaustion | Per-service PostgreSQL pool (max 10–20 connections) |
+| **Idempotent Producer** | Duplicate Kafka messages | `enable.idempotence=true` on all producers |
+| **Rate Limiting** | API abuse | Redis sliding window · 100 req/min/IP · graceful degradation |
 
 ---
 
@@ -383,77 +271,64 @@ This project implements the reliability patterns that power **Uber's payment sys
 
 ### Distributed Tracing (OpenTelemetry + Jaeger)
 
-Every request — from frontend click to database write — generates a single **trace ID** that propagates across all services:
+Every request — from frontend click to final database write — carries a single trace ID across all 7 services:
 
-```text
-Frontend HTTP ──► Order Service ──► Kafka ──► Payment Service ──► PostgreSQL
-     │                │                  │           │                │
-     └─── trace ID: abc123 ──────────────┼───────────┼────────────────┘
-                                        Span 1     Span 2           Span 3
-     (HTTP POST)                 (Kafka Produce)  (Kafka Consume)   (SQL Query)
+```
+POST /api/orders
+     │   trace: abc123
+     ▼
+Order Service [Span 1: HTTP handler, 12ms]
+     │   trace: abc123 → propagated in Kafka message header
+     ▼
+Inventory Service [Span 2: Kafka consumer, 8ms]
+     │   trace: abc123
+     ▼
+Payment Service [Span 3: Payment processing, 45ms]
+     │   trace: abc123
+     ▼
+Jaeger UI: full waterfall across 7 services, 1 trace ID
 ```
 
-Open [Jaeger UI](http://localhost:16686) to view traces, filter by service, and drill into span details.
+View at: **http://localhost:16686** — filter by service, drill into spans, see exact SQL queries.
 
-### Prometheus Metrics
+### Prometheus Metrics (18 custom metrics)
 
-Every service exposes a `/metrics` endpoint (port 4001–4007) with structured business and performance metrics. Prometheus scrapes all services every 15s. A pre-built Grafana dashboard provides real-time visibility into:
+Every service exposes `/metrics`. Prometheus scrapes every 15s.
 
-- **Order throughput** — Created, cancelled, rate-limited
-- **Payment health** — Success rate, failure count, processing duration
-- **Inventory operations** — Reservations, releases, failures
-- **Pipeline health** — DLQ event count, replay success/failure
-- **Latency breakdown** — p50/p95/p99 processing and payment duration
+| Category | Key Metrics |
+|----------|------------|
+| **Orders** | `orders_created_total`, `orders_cancelled_total`, `processing_duration_seconds` (p50/p95/p99) |
+| **Payments** | `payments_processed_total`, `payments_failed_total`, `payment_duration_seconds` |
+| **Inventory** | `stock_reserved_total`, `stock_released_total`, `reservation_failures_total` |
+| **DLQ** | `dlq_events_stored_total`, `dlq_events_replayed_total`, `dlq_replay_failures_total` |
+| **Infrastructure** | `rate_limit_hits_total`, `outbox_published_total`, `notifications_sent_total` |
 
-### Enable Tracing
+### Pre-built Grafana Dashboard
 
-```bash
-# Set environment variables
-OTEL_ENABLED=true JAEGER_ENDPOINT=http://jaeger:14250 npm run dev
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Orders Created (24h)  │  Payment Success Rate  │  DLQ Count   │
+│  [time series]          │  [gauge: 92.3%]        │  [stat: 3]   │
+├─────────────────────────────────────────────────────────────────┤
+│  Processing Latency p50/p95/p99   │  Payment Duration Histogram │
+│  [line chart]                      │  [heatmap]                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Rate Limit Hits/hour  │  Stock Operations  │  Audit Event Rate  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Schema Registry (Avro)
+Import: `monitoring/grafana/dashboards/kafka-orders-system.json` → Grafana UI
 
-| Subject | Versions | Compatibility |
-|---------|----------|---------------|
-| `order-created-value` | v1, v2 | BACKWARD |
-| `inventory-reserved-value` | v1 | — |
-| `payment-processed-value` | v1 | — |
-| `payment-failed-value` | v1 | — |
+### Schema Registry (Avro · Backward Compatible)
 
-**Schema Evolution Example — `order-created-v2`:**
 ```avro
+// order-created-v1 → v2: safe schema evolution
 {
   "name": "couponCode",
   "type": ["null", "string"],
-  "default": null  // ← Backward compatible: old readers ignore new field
+  "default": null   // ← backward compatible: v1 readers ignore new field
 }
 ```
-
-### Prometheus Metrics
-
-Every service exposes a `/metrics` endpoint (port 4001–4007) scraped by Prometheus. All metrics are prefixed `kafka_orders_`:
-
-| Metric | Type | Service | Description |
-|--------|------|---------|-------------|
-| `kafka_orders_created_total` | Counter | Order | Total orders placed |
-| `kafka_orders_cancelled_total` | Counter | Order | Total orders cancelled |
-| `kafka_orders_outbox_published_total` | Counter | Order | Outbox events published to Kafka |
-| `kafka_orders_rate_limit_hits_total` | Counter | Order | Requests rejected by rate limiter |
-| `kafka_orders_processing_duration_seconds` | Histogram | Order | Order processing latency (p50/p95/p99) |
-| `kafka_orders_stock_reserved_total` | Counter | Inventory | Total stock reservations |
-| `kafka_orders_stock_released_total` | Counter | Inventory | Total stock releases |
-| `kafka_orders_stock_reservation_failures_total` | Counter | Inventory | Failed stock reservations |
-| `kafka_orders_inventory_checks_total` | Counter | Inventory | Inventory stock checks |
-| `kafka_orders_payments_processed_total` | Counter | Payment | Successful payments |
-| `kafka_orders_payments_failed_total` | Counter | Payment | Failed payments |
-| `kafka_orders_payment_duration_seconds` | Histogram | Payment | Payment processing latency |
-| `kafka_orders_notifications_sent_total` | Counter | Notification | Notifications dispatched |
-| `kafka_orders_analytics_events_total` | Counter | Analytics | Analytics events recorded |
-| `kafka_orders_audit_events_total` | Counter | Audit | Audit events recorded |
-| `kafka_orders_dlq_events_stored_total` | Counter | DLQ Replay | Events sent to DLQ |
-| `kafka_orders_dlq_events_replayed_total` | Counter | DLQ Replay | Events replayed from DLQ |
-| `kafka_orders_dlq_replay_failures_total` | Counter | DLQ Replay | Failed replay attempts |
 
 ---
 
@@ -461,14 +336,14 @@ Every service exposes a `/metrics` endpoint (port 4001–4007) scraped by Promet
 
 | Layer | Mechanism | Detail |
 |-------|-----------|--------|
-| **API Authentication** | Bearer JWT tokens | Validated by `auth.ts` middleware on every request |
-| **Rate Limiting** | Redis sliding window | 100 requests/minute per IP, configurable |
-| **Helmet** | HTTP security headers | `helmet()` middleware on all services |
-| **CORS** | Cross-origin controls | `cors()` with configurable origins |
-| **Input Validation** | Zod schemas | All API inputs validated before processing |
-| **SQL Injection** | Parameterized queries | All database queries use `$1, $2` placeholders |
-| **Secrets Management** | Kubernetes Secrets | DB passwords, API keys stored in K8s Secrets |
-| **TLS/SSL** | HTTPS | Ingress terminates TLS (configurable) |
+| **API Auth** | JWT Bearer | Validated on every route via `auth.ts` middleware |
+| **Rate Limiting** | Redis sliding window | 100 req/min/IP · X-RateLimit-* headers · fails open if Redis down |
+| **Input Validation** | Zod schemas | All API bodies validated before processing |
+| **HTTP Security** | Helmet.js | Full header suite: CSP, HSTS, X-Frame-Options |
+| **SQL Injection** | Parameterized queries | `$1, $2` placeholders throughout — no string concatenation |
+| **Secrets** | Kubernetes Secrets | DB passwords, API keys — never in environment variables |
+| **TLS** | HTTPS via Ingress | TLS termination at Kubernetes Ingress |
+| **CORS** | Configurable origins | Per-environment allow-list |
 
 ---
 
@@ -476,62 +351,40 @@ Every service exposes a `/metrics` endpoint (port 4001–4007) scraped by Promet
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org) v20+
-- [Docker](https://docker.com) & [Docker Compose](https://docs.docker.com/compose/)
-- [Kubectl](https://kubernetes.io/docs/tasks/tools/) (for K8s deployment)
+- Node.js v20+
+- Docker + Docker Compose
+- `kubectl` (for Kubernetes deployment)
 
-### Run Full Stack with Docker (Recommended — 30 seconds)
+### Run Everything in 30 Seconds
 
 ```bash
 git clone https://github.com/ajju853/Kafka-event-driven-order-system-architecture.git
 cd kafka-event-driven-order-system-architecture
 
-# Start everything: Kafka, PostgreSQL, Redis, all 7 services, frontend, Jaeger
+# Start all 18 containers: Kafka, PostgreSQL, Redis, 7 services, frontend, Jaeger, Prometheus, Grafana
 docker compose -f kafka-order-system/docker/docker-compose.yml up -d
 
-# Check all services are running
+# Verify all services are healthy
 docker compose -f kafka-order-system/docker/docker-compose.yml ps
 ```
 
-**What you get:**
-```
-SERVICE              PORT       STATUS
-zookeeper:2181                  running
-kafka:9092                      running  
-postgres:5432                   running
-redis:6379                      running
-schema-registry:8081            running
-jaeger:16686                    running
-prometheus:9090                 running
-grafana:3001                    running
-kafka-ui:8080                   running
-order-service:4001              running
-inventory-service:4002          running
-payment-service:4006            running
-notification-service:4003       running
-analytics-service:4004          running
-audit-service:4005              running
-dlq-replay-service:4007         running
-frontend:3000                   running
-```
+### Access Points
 
-### Access the System
-
-| Component | URL | Credentials |
-|-----------|-----|-------------|
+| Service | URL | Auth |
+|---------|-----|------|
 | **Frontend** | http://localhost:3000 | — |
-| **Order API** | http://localhost:4001/health | Bearer `pk_test_order_system_2024` |
+| **Order API** | http://localhost:4001 | `Bearer pk_test_order_system_2024` |
 | **Kafka UI** | http://localhost:8080 | — |
 | **Jaeger Tracing** | http://localhost:16686 | — |
-| **Schema Registry** | http://localhost:8081 | — |
 | **Prometheus** | http://localhost:9090 | — |
-| **Grafana** | http://localhost:3001 | admin/admin |
+| **Grafana** | http://localhost:3001 | `admin / admin` |
+| **Schema Registry** | http://localhost:8081 | — |
 | **DLQ Replay API** | http://localhost:4007/dlq/events | — |
 
-### Test the Order Flow
+### Test the Full Order Flow
 
 ```bash
-# 1. Create an order (auto-triggers inventory → payment → notification → analytics → audit)
+# 1. Place an order — triggers the full pipeline automatically
 curl -X POST http://localhost:4001/api/orders \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer pk_test_order_system_2024" \
@@ -541,15 +394,12 @@ curl -X POST http://localhost:4001/api/orders \
       { "productId": "550e8400-e29b-41d4-a716-446655440010", "quantity": 2, "price": 29.99 }
     ],
     "shippingAddress": {
-      "street": "123 Main St",
-      "city": "San Francisco",
-      "state": "CA",
-      "zip": "94105",
-      "country": "US"
+      "street": "123 Main St", "city": "San Francisco",
+      "state": "CA", "zip": "94105", "country": "US"
     }
   }'
 
-# 2. List orders
+# 2. List your orders
 curl http://localhost:4001/api/orders \
   -H "Authorization: Bearer pk_test_order_system_2024"
 
@@ -557,16 +407,16 @@ curl http://localhost:4001/api/orders \
 curl -X POST http://localhost:4001/api/orders/{ORDER_ID}/cancel \
   -H "Authorization: Bearer pk_test_order_system_2024"
 
-# 4. Check DLQ for failed events
+# 4. View failed events in the DLQ
 curl http://localhost:4007/dlq/events
 
-# 5. Replay a failed event
+# 5. Replay a specific failed event
 curl -X POST http://localhost:4007/dlq/replay/{EVENT_ID}
 
 # 6. View payment history
 curl http://localhost:4006/payments
 
-# 7. View Jaeger distributed traces
+# 7. Open Jaeger — see the full distributed trace for your order
 open http://localhost:16686
 ```
 
@@ -574,52 +424,43 @@ open http://localhost:16686
 
 ## 🧪 Development
 
-### Local Setup (Without Docker)
+### Local Setup Without Docker
 
 ```bash
-# 1. Clone and install
+# 1. Clone and install all workspaces
 git clone https://github.com/ajju853/Kafka-event-driven-order-system-architecture.git
-cd kafka-event-driven-order-system-architecture
+cd kafka-event-driven-order-system-architecture && npm install
 
-# 2. Install dependencies (auto-builds shared library)
-npm install
-
-# 3. Start infrastructure (Kafka, PostgreSQL, Redis, Jaeger)
+# 2. Start only infrastructure (Kafka, PG, Redis, Jaeger)
 docker compose -f kafka-order-system/docker/docker-compose.yml up -d \
   zookeeper kafka postgres redis schema-registry jaeger
 
-# 4. Start all 7 services
+# 3. Start all 7 services concurrently
 npm run dev
 
-# 5. Start frontend (separate terminal)
+# 4. Start the frontend (separate terminal)
 npm run dev:frontend
 ```
 
-### Project Scripts
+### Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start all services concurrently |
-| `npm run dev:frontend` | Start Next.js frontend |
+| Command | What it does |
+|---------|-------------|
+| `npm run dev` | Start all 7 services concurrently with hot reload |
+| `npm run dev:frontend` | Start Next.js frontend on port 3000 |
 | `npm run build` | Build all workspaces |
 | `npm run test` | Run all tests |
-| `npm run docker:up` | Start full stack in Docker |
-| `npm run docker:down` | Stop Docker stack |
+| `npm run docker:up` | Full stack in Docker (18 containers) |
+| `npm run docker:down` | Stop and clean up |
 
 ---
 
 ## ☸️ Kubernetes Deployment
 
-### Prerequisites
-
-- Kubernetes cluster (kind, minikube, EKS, AKS, GKE)
-- kubectl configured
-
-### Deploy
-
 ```bash
 cd kafka-event-driven-order-system-architecture/kafka-order-system
 
+# Deploy in order
 kubectl apply -f kubernetes/namespace.yaml
 kubectl apply -f kubernetes/configmap.yaml
 kubectl apply -f kubernetes/secrets.yaml
@@ -630,77 +471,30 @@ kubectl apply -f kubernetes/services.yaml
 kubectl apply -f kubernetes/hpa.yaml
 kubectl apply -f kubernetes/ingress.yaml
 
-# Verify all pods are running
+# Verify
 kubectl get pods -n order-system
-
-# Watch rollout status
 kubectl rollout status deployment/order-service -n order-system
-kubectl rollout status deployment/inventory-service -n order-system
-kubectl rollout status deployment/payment-service -n order-system
-kubectl rollout status deployment/frontend -n order-system
 ```
 
 ### Auto-Scaling (HPA)
 
-| Service | Min Replicas | Max Replicas | CPU Target |
-|---------|-------------|-------------|------------|
+| Service | Min | Max | CPU Target |
+|---------|-----|-----|------------|
 | Order Service | 2 | 10 | 70% |
 | Inventory Service | 2 | 8 | 70% |
 | Payment Service | 2 | 6 | 70% |
 | Frontend | 2 | 6 | 70% |
-| Notification Service | 1 | 4 | 70% |
-| Analytics Service | 1 | 4 | 70% |
-| Audit Service | 1 | 4 | 70% |
-| DLQ Replay Service | 1 | 3 | 70% |
+| Notification, Analytics, Audit | 1 | 4 | 70% |
+| DLQ Replay | 1 | 3 | 70% |
 
-### CI/CD Pipeline
-
-The GitHub Actions pipeline (`kafka-order-system/.github/workflows/ci-cd.yml`):
-
-```mermaid
-flowchart LR
-    A[Push to main] --> B[Test all services]
-    B --> C[Build Docker images]
-    C --> D[Push to Registry]
-    D --> E[Deploy to K8s]
-    E --> F[Rollout Status]
-```
-
----
-
-## 📊 Monitoring
-
-### Dashboards
-
-| Tool | URL | Purpose |
-|------|-----|---------|
-| **Jaeger** | http://localhost:16686 | Distributed tracing across all services |
-| **Kafka UI** | http://localhost:8080 | Topics, partitions, consumer groups, offsets |
-| **Schema Registry** | http://localhost:8081 | Avro schema versions and compatibility |
-| **Prometheus** | http://localhost:9090 | Metric collection + querying (PromQL) |
-| **Grafana** | http://localhost:3001 | Full dashboard suite (pre-built JSON) |
-
-### Pre-Built Grafana Dashboard
-
-A complete dashboard (`monitoring/grafana/dashboards/kafka-orders-system.json`) is included with these panels:
+### CI/CD Pipeline (GitHub Actions)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Orders Created — 24h Sparkline   │  Payment Success Rate   │
-│  [Time series: kafka_orders_]     │  [Gauge: 92.3%]         │
-├─────────────────────────────────────────────────────────────┤
-│  Orders by Status                  │  Rate Limit Hits       │
-│  [Bar chart: PENDING / CANCELLED]  │  [Stat: last hour]     │
-├─────────────────────────────────────────────────────────────┤
-│  Payment Duration (p50/p95/p99)    │  Processing Duration   │
-│  [Line chart: 0.2s / 0.5s / 1.0s] │  [Line chart: latency] │
-├─────────────────────────────────────────────────────────────┤
-│  Top Service Metrics               │  DLQ Event Summary     │
-│  [Table: all kafka_orders_*]       │  [Stat: stored/replayed]│
-└─────────────────────────────────────────────────────────────┘
+Push to main
+     │
+     ▼
+[Test all services]  →  [Build Docker images]  →  [Push to Registry]  →  [Deploy to K8s]  →  [Rollout status]
 ```
-
-Import from Grafana UI: **Dashboards → Import → Upload `monitoring/grafana/dashboards/kafka-orders-system.json`**
 
 ---
 
@@ -709,226 +503,93 @@ Import from Grafana UI: **Dashboards → Import → Upload `monitoring/grafana/d
 ```
 kafka-event-driven-order-system-architecture/
 │
-├── kafka-order-system/                    # Main project directory
+├── kafka-order-system/
+│   ├── shared/                         # Shared Kafka event schemas (Zod) + TypeScript types
 │   │
-│   ├── shared/                            # Shared library (workspace)
-│   │   └── src/
-│   │       ├── events/                    # Kafka event schemas (Zod)
-│   │       │   ├── index.ts
-│   │       │   └── order-events.ts        # All event types & topics
-│   │       ├── types/                     # Shared TypeScript types
-│   │       │   ├── index.ts
-│   │       │   └── api.ts
-│   │       └── index.ts                   # Re-exports everything
+│   ├── services/
+│   │   ├── order-service/              # API Gateway + Transactional Outbox  (port 4001)
+│   │   ├── inventory-service/          # Stock management + Redis cache       (port 4002)
+│   │   ├── payment-service/            # Payment processing + saga events     (port 4006)
+│   │   ├── notification-service/       # Email / SMS / Push dispatch          (port 4003)
+│   │   ├── analytics-service/          # Revenue metrics + daily summaries    (port 4004)
+│   │   ├── audit-service/              # Immutable event log                  (port 4005)
+│   │   └── dlq-replay-service/         # DLQ capture + REST replay API        (port 4007)
 │   │
-│   ├── services/                          # All microservices
-│   │   │
-│   │   ├── order-service/                 # API Gateway (port 4001)
-│   │   │   ├── src/
-│   │   │   │   ├── config/                # Environment configuration
-│   │   │   │   ├── consumers/             # Kafka consumer (status updates)
-│   │   │   │   ├── controllers/           # REST endpoints
-│   │   │   │   ├── middleware/            # Auth, rate limiting, error handler
-│   │   │   │   ├── models/               # Database schema + pool
-│   │   │   │   ├── services/             # Kafka producer, outbox publisher
-│   │   │   │   └── utils/               # Logger, tracing
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   ├── inventory-service/             # Inventory (port 4002)
-│   │   │   ├── src/
-│   │   │   │   ├── consumers/            # Order event consumer
-│   │   │   │   ├── controllers/          # REST endpoints
-│   │   │   │   ├── models/              # DB + Redis
-│   │   │   │   ├── services/            # Stock management
-│   │   │   │   └── utils/
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   ├── payment-service/               # Payment (port 4006)
-│   │   │   ├── src/
-│   │   │   │   ├── consumers/            # Inventory-reserved consumer
-│   │   │   │   ├── models/              # Payment table schema
-│   │   │   │   ├── services/            # Payment processor
-│   │   │   │   └── utils/
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   ├── notification-service/          # Notifications (port 4003)
-│   │   │   ├── src/
-│   │   │   │   ├── consumers/            # All event consumers
-│   │   │   │   └── utils/
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   ├── analytics-service/             # Analytics (port 4004)
-│   │   │   ├── src/
-│   │   │   │   ├── consumers/            # Order/payment consumers
-│   │   │   │   ├── models/              # Metrics table
-│   │   │   │   ├── services/            # Metric recording
-│   │   │   │   └── utils/
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   ├── audit-service/                 # Audit (port 4005)
-│   │   │   ├── src/
-│   │   │   │   ├── consumers/            # All event consumers
-│   │   │   │   ├── models/              # Audit log table
-│   │   │   │   ├── services/            # Event recording
-│   │   │   │   └── utils/
-│   │   │   ├── Dockerfile
-│   │   │   └── package.json
-│   │   │
-│   │   └── dlq-replay-service/            # DLQ Replay (port 4007)
-│   │       ├── src/
-│   │       │   ├── controllers/          # REST endpoints
-│   │       │   ├── services/            # DLQ consumer + replay
-│   │       │   └── utils/
-│   │       ├── Dockerfile
-│   │       └── package.json
+│   ├── frontend/                       # Next.js 14 — App Router + Redux + TanStack Query
 │   │
-│   ├── frontend/                          # Next.js 14 UI (port 3000)
-│   │   ├── src/
-│   │   │   ├── app/                      # App Router pages
-│   │   │   │   ├── admin/               # Admin dashboard
-│   │   │   │   ├── cart/                # Shopping cart
-│   │   │   │   ├── checkout/            # Checkout flow
-│   │   │   │   ├── orders/              # Order list + detail
-│   │   │   │   ├── products/            # Product catalog
-│   │   │   │   ├── layout.tsx           # Root layout
-│   │   │   │   └── page.tsx             # Home page
-│   │   │   ├── components/              # Reusable UI components
-│   │   │   ├── hooks/                   # Custom React hooks
-│   │   │   ├── lib/                     # API client + utilities
-│   │   │   ├── store/                   # Redux Toolkit store
-│   │   │   └── types/                   # TypeScript interfaces
-│   │   ├── Dockerfile
-│   │   └── package.json
+│   ├── monitoring/
+│   │   ├── prometheus/prometheus.yml   # Scrape config — all 7 services
+│   │   └── grafana/dashboards/         # Pre-built JSON dashboard
 │   │
-│   ├── monitoring/                        # Prometheus + Grafana
-│   │   ├── prometheus/
-│   │   │   └── prometheus.yml            # Scrape config (all 7 services)
-│   │   └── grafana/
-│   │       ├── datasources/
-│   │       │   └── prometheus.yml        # Grafana → Prometheus datasource
-│   │       └── dashboards/
-│   │           ├── dashboard.yaml        # Dashboard auto-provisioning
-│   │           └── kafka-orders-system.json  # Pre-built order monitoring
-│   │
-│   ├── docker/                            # Docker Compose
-│   │   ├── docker-compose.yml            # Full stack (18 containers)
-│   │   └── init-multi-db.sh             # PostgreSQL multi-database init
-│   │
-│   ├── kubernetes/                        # Kubernetes manifests
-│   │   ├── namespace.yaml
-│   │   ├── configmap.yaml
-│   │   ├── secrets.yaml
-│   │   ├── kafka.yaml                    # Kafka + Zookeeper
-│   │   ├── postgres.yaml                 # PostgreSQL StatefulSet
-│   │   ├── redis.yaml                    # Redis StatefulSet
-│   │   ├── services.yaml                # All service Deployments
-│   │   ├── hpa.yaml                     # Auto-scaling rules
-│   │   └── ingress.yaml                 # API Gateway Ingress
-│   │
-│   ├── docs/                              # Detailed documentation
-│   │   ├── HLD.md                        # High-Level Design
-│   │   ├── API.md                        # API Reference
-│   │   ├── Kafka.md                      # Kafka Design
-│   │   ├── Outbox.md                     # Transactional Outbox
-│   │   ├── Retry.md                      # Retry Strategy
-│   │   ├── DLQ.md                        # Dead Letter Queue
-│   │   ├── Security.md                   # Security Architecture
-│   │   └── Observability.md             # OpenTelemetry, Jaeger, Schema
-│   │
-│   ├── .github/workflows/                 # CI/CD
-│   │   └── ci-cd.yml                    # GitHub Actions pipeline
-│   │
-│   ├── diagrams/                          # Architecture diagrams
-│   ├── package.json                      # Root workspace config
-│   ├── .gitignore
-│   └── README.md                         # This file
-│
-└── .gitignore
+│   ├── docker/docker-compose.yml       # Full 18-container local stack
+│   ├── kubernetes/                     # Deployments, HPA, Ingress, Secrets
+│   ├── docs/                           # HLD, API, Kafka, Outbox, DLQ, Security, Observability
+│   └── .github/workflows/ci-cd.yml    # Test → Build → Push → Deploy
 ```
-
----
-
-## 🧠 What Makes This Production-Grade?
-
-Every architecture decision in this project solves a real problem that occurs in production distributed systems:
-
-### 1. No Dual-Write Problem
-**Problem:** Writing to DB and Kafka in separate steps means if one fails, data is inconsistent.
-**Solution:** Transactional Outbox writes both in one DB transaction. The outbox poller guarantees delivery.
-
-### 2. No Data Loss
-**Problem:** If a consumer crashes mid-processing, the message is lost.
-**Solution:** Kafka stores messages on disk with configurable retention. At-least-once delivery + consumer idempotency means no data loss.
-
-### 3. No Cascading Failures
-**Problem:** If Payment Service is down, Order Service blocks waiting for response.
-**Solution:** All inter-service communication is async via Kafka. Services don't wait on each other.
-
-### 4. No Infinite Retry Loops
-**Problem:** A bad message keeps retrying forever, wasting resources.
-**Solution:** Max 3 retries with exponential backoff, then DLQ. Human operator investigates.
-
-### 5. No Poison Pill Messages
-**Problem:** One bad message blocks the entire consumer, preventing processing of good messages.
-**Solution:** DLQ captures the poison pill. Consumer continues processing healthy messages.
-
-### 6. No Manual Rollback
-**Problem:** Payment succeeds but inventory was never reserved — data inconsistency.
-**Solution:** Saga pattern with compensating events. Payment failure → auto-publish inventory-release.
-
-### 7. No Blind Spots
-**Problem:** Debugging distributed failures is nearly impossible without tracing.
-**Solution:** OpenTelemetry trace ID propagates across every service and Kafka message. Full visibility in Jaeger.
 
 ---
 
 ## 📖 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [High-Level Design](kafka-order-system/docs/HLD.md) | Full architecture, components, data flow, event lifecycle |
-| [Kafka Design](kafka-order-system/docs/Kafka.md) | Topics, consumer groups, Avro schemas, exactly-once |
-| [API Reference](kafka-order-system/docs/API.md) | All REST endpoints with request/response examples |
-| [Outbox Pattern](kafka-order-system/docs/Outbox.md) | Implementation deep-dive with SQL queries |
-| [Retry Strategy](kafka-order-system/docs/Retry.md) | Backoff algorithm, configuration, circuit breaking |
-| [Dead Letter Queue](kafka-order-system/docs/DLQ.md) | DLQ consumption, replay API, recovery workflow |
-| [Security](kafka-order-system/docs/Security.md) | JWT, RBAC, rate limiting, compliance |
-| [Observability](kafka-order-system/docs/Observability.md) | OpenTelemetry, Jaeger, Schema Registry, metrics |
+| Document | Contents |
+|----------|----------|
+| [`docs/HLD.md`](kafka-order-system/docs/HLD.md) | Full architecture, component design, data flow, event lifecycle |
+| [`docs/Kafka.md`](kafka-order-system/docs/Kafka.md) | Topic design, consumer groups, Avro schemas, exactly-once semantics |
+| [`docs/API.md`](kafka-order-system/docs/API.md) | All REST endpoints with request/response examples |
+| [`docs/Outbox.md`](kafka-order-system/docs/Outbox.md) | Transactional Outbox implementation with SQL queries |
+| [`docs/Retry.md`](kafka-order-system/docs/Retry.md) | Backoff algorithm, configuration, circuit breaking |
+| [`docs/DLQ.md`](kafka-order-system/docs/DLQ.md) | DLQ capture, replay API, operator recovery workflow |
+| [`docs/Security.md`](kafka-order-system/docs/Security.md) | JWT, RBAC, rate limiting, SQL injection prevention |
+| [`docs/Observability.md`](kafka-order-system/docs/Observability.md) | OpenTelemetry, Jaeger, Schema Registry, Prometheus |
+
+---
+
+## 🧠 Why Each Decision Was Made
+
+| Decision | Alternative Considered | Why This Approach |
+|----------|----------------------|------------------|
+| Transactional Outbox | Direct Kafka producer call | Direct call → dual-write risk. Outbox is atomic, proven at scale. |
+| Per-service PostgreSQL | Shared database | Shared DB = tight coupling, schema conflicts, no independent scaling |
+| Idempotent consumers | Kafka Exactly-Once Transactions | Kafka EOS adds complexity + performance overhead. Outbox + idempotency is simpler and portable. |
+| Exponential backoff → DLQ | Infinite retry | Infinite retry blocks consumers and masks root cause. DLQ surfaces failures for human review. |
+| Saga (compensating events) | Two-Phase Commit (2PC) | 2PC is fragile, slow, and locks resources. Sagas are async, resilient, and proven in production. |
+| Schema Registry (Avro) | JSON schemas | Avro enforces schema evolution contracts. JSON has no enforcement — a producer change can silently break all consumers. |
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! This project is designed to be a learning resource and portfolio piece. Here's how to contribute:
+Contributions welcome. This project is designed as both a portfolio piece and a learning resource.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+git checkout -b feature/your-feature
+git commit -m 'Add: your feature description'
+git push origin feature/your-feature
+# Open a Pull Request
+```
 
-### Ideas for Contributions
-
-- **End-to-end tests** — Integration tests with Testcontainers
-- **gRPC** — Internal service-to-service gRPC for synchronous paths
-- **Circuit breaker** — More sophisticated circuit breaker with half-open state
-- **Alerting rules** — Prometheus alerting rules for payment failures, high consumer lag, DLQ growth
+**High-value contribution ideas:**
+- End-to-end tests with Testcontainers
+- gRPC for synchronous internal paths
+- Prometheus alerting rules (consumer lag, DLQ growth rate, payment failure spike)
+- Half-open circuit breaker state machine
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT License — see [`LICENSE`](LICENSE) for details.
 
 ---
 
-<p align="center">
-  Built with ❤️ by <a href="https://github.com/ajju853">@ajju853</a>
-  <br><br>
-  <strong>⭐ Star this repo if you find it useful! ⭐</strong>
-</p>
+<div align="center">
+
+Built by [**@ajju853**](https://github.com/ajju853) · [Portfolio](https://ajimpatelportfolio.ajimp340.workers.dev/) · [LinkedIn](https://www.linkedin.com/in/ajim-patel-b359192ab/)
+
+<br/>
+
+**⭐ Star this repo if it helped you understand event-driven architecture ⭐**
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=0,2,2,5,30&height=100&section=footer" width="100%"/>
+
+</div>

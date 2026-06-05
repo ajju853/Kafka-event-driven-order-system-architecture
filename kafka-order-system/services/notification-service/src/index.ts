@@ -4,9 +4,10 @@ import helmet from "helmet";
 import { config } from "./config";
 import { OrderEventConsumer } from "./consumers/order-consumer";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
+  initializeTracing("notification-service");
   const app = express();
   app.use(helmet());
   app.use(cors());
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
   const shutdown = async () => {
     logger.info("Shutting down notification service...");
     await consumer.stop();
+    await shutdownTracing();
     process.exit(0);
   };
 

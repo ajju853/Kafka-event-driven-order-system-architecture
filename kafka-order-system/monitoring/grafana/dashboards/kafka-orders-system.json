@@ -165,6 +165,54 @@
         }
       ],
       "description": "Resident memory per microservice"
+    },
+    {
+      "title": "Kafka Consumer Lag (by consumer group)",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "targets": [
+        {
+          "expr": "kafka_consumergroup_lag",
+          "legendFormat": "{{consumergroup}} - {{topic}}"
+        }
+      ],
+      "description": "Kafka consumer group lag — messages behind for each consumer group"
+    },
+    {
+      "title": "Kafka Topic Throughput",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "targets": [
+        {
+          "expr": "rate(kafka_topic_partition_current_offset[5m])",
+          "legendFormat": "{{topic}}"
+        }
+      ],
+      "description": "Messages per second by topic"
+    },
+    {
+      "title": "Kafka Message Rate",
+      "type": "graph",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 40 },
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_topic_partition_current_offset[1m]))",
+          "legendFormat": "messages/sec"
+        }
+      ],
+      "description": "Total Kafka message throughput per second"
+    },
+    {
+      "title": "Active Alerts",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 40 },
+      "targets": [
+        {
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "{{alertname}}"
+        }
+      ],
+      "description": "Currently firing Prometheus alerts"
     }
   ],
   "annotations": {

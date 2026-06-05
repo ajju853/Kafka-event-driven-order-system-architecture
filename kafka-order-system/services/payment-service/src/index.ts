@@ -5,9 +5,10 @@ import { config } from "./config";
 import { initializeDatabase, pool } from "./models/db";
 import { InventoryConsumer } from "./consumers/inventory-consumer";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main() {
+  initializeTracing("payment-service");
   logger.info("Starting payment service...");
 
   await initializeDatabase();
@@ -67,6 +68,7 @@ async function main() {
     logger.info("Shutting down payment service...");
     await consumer.shutdown();
     await pool.end();
+    await shutdownTracing();
     process.exit(0);
   });
 
@@ -74,6 +76,7 @@ async function main() {
     logger.info("Shutting down payment service...");
     await consumer.shutdown();
     await pool.end();
+    await shutdownTracing();
     process.exit(0);
   });
 }

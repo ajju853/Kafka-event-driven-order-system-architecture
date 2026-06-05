@@ -6,9 +6,10 @@ import { initializeDatabase } from "./models/db";
 import { AuditConsumer } from "./consumers/audit-consumer";
 import { getAuditLogs, getAuditStats } from "./controllers/audit-controller";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
+  initializeTracing("audit-service");
   const app = express();
   app.use(helmet());
   app.use(cors());
@@ -42,6 +43,7 @@ async function main(): Promise<void> {
     logger.info("Shutting down audit service...");
     await consumer.stop();
     await (await import("./models/db")).pool.end();
+    await shutdownTracing();
     process.exit(0);
   };
 

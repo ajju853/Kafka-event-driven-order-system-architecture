@@ -7,9 +7,10 @@ import { connectRedis } from "./config/redis";
 import { OrderConsumer } from "./consumers/order-consumer";
 import { getInventory, getReservationsByOrder } from "./controllers/inventory-controller";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
+  initializeTracing("inventory-service");
   const app = express();
   app.use(helmet());
   app.use(cors());
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
     await consumer.stop();
     await (await import("./config/redis")).redis.quit();
     await (await import("./models/db")).pool.end();
+    await shutdownTracing();
     process.exit(0);
   };
 

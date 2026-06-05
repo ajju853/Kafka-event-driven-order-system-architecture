@@ -134,6 +134,8 @@ services:
       POSTGRES_DB: orderdb
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
@@ -142,6 +144,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -163,6 +167,8 @@ services:
       POSTGRES_DB: inventorydb
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
@@ -171,6 +177,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -185,10 +193,14 @@ services:
     environment:
       PORT: 4003
       KAFKA_BROKER: kafka:29092
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -208,12 +220,16 @@ services:
       POSTGRES_USER: orderuser
       POSTGRES_PASSWORD: orderpass
       POSTGRES_DB: analyticsdb
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -233,27 +249,16 @@ services:
       POSTGRES_USER: orderuser
       POSTGRES_PASSWORD: orderpass
       POSTGRES_DB: auditdb
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    networks:
-      - kafka-net
-
-  jaeger:
-    image: jaegertracing/all-in-one:1.55
-    hostname: jaeger
-    container_name: jaeger
-    ports:
-      - "16686:16686"
-      - "14250:14250"
-      - "14268:14268"
-      - "4318:4318"
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
-      LOG_LEVEL: debug
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -273,7 +278,8 @@ services:
       POSTGRES_USER: orderuser
       POSTGRES_PASSWORD: orderpass
       POSTGRES_DB: paymentdb
-      JAEGER_ENDPOINT: http://jaeger:14250
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
@@ -301,12 +307,16 @@ services:
       POSTGRES_USER: orderuser
       POSTGRES_PASSWORD: orderpass
       POSTGRES_DB: dlqdb
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       NODE_ENV: production
     depends_on:
       kafka:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      jaeger:
+        condition: service_started
     networks:
       - kafka-net
 
@@ -318,6 +328,7 @@ services:
       - "9090:9090"
     volumes:
       - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ../monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
     depends_on:
       order-service:
         condition: service_started
@@ -348,6 +359,48 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    networks:
+      - kafka-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    hostname: alertmanager
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - kafka-net
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    hostname: kafka-exporter
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    environment:
+      KAFKA_BROKERS: kafka:29092
+    command:
+      - "--kafka.server=kafka:29092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-net
+
+  loki:
+    image: grafana/loki:2.9.0
+    hostname: loki
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml
+    command:
+      - "-config.file=/etc/loki/loki-config.yml"
     networks:
       - kafka-net
 

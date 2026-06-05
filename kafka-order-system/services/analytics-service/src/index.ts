@@ -9,9 +9,10 @@ import {
   getDailySummary,
 } from "./controllers/analytics-controller";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
+  initializeTracing("analytics-service");
   const app = express();
   app.use(helmet());
   app.use(cors());
@@ -45,6 +46,7 @@ async function main(): Promise<void> {
     logger.info("Shutting down analytics service...");
     await consumer.stop();
     await (await import("./models/db")).pool.end();
+    await shutdownTracing();
     process.exit(0);
   };
 

@@ -7,9 +7,10 @@ import { DLQConsumer } from "./services/dlq-consumer";
 import { DLQReplayService } from "./services/dlq-replay";
 import { createDLQController } from "./controllers/dlq-controller";
 import { logger } from "./utils/logger";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main() {
+  initializeTracing("dlq-replay-service");
   logger.info("Starting DLQ replay service...");
 
   const pool = new Pool({
@@ -80,6 +81,7 @@ async function main() {
     await dlqConsumer.shutdown();
     await replayService.shutdown();
     await pool.end();
+    await shutdownTracing();
     process.exit(0);
   });
 
@@ -88,6 +90,7 @@ async function main() {
     await dlqConsumer.shutdown();
     await replayService.shutdown();
     await pool.end();
+    await shutdownTracing();
     process.exit(0);
   });
 }

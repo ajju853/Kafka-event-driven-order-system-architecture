@@ -19,7 +19,7 @@ import {
 } from "./controllers/order-controller";
 import { logger } from "./utils/logger";
 import { initializeTracing } from "./utils/tracing";
-import { getMetrics, getMetricsContentType } from "@kafka-order-system/shared";
+import { getMetrics, getMetricsContentType, shutdownTracing } from "@kafka-order-system/shared";
 
 async function main(): Promise<void> {
   initializeTracing();
@@ -71,6 +71,7 @@ async function main(): Promise<void> {
     await disconnectProducer();
     const { pool } = await import("./models/db");
     await pool.end();
+    await shutdownTracing();
     process.exit(0);
   };
 

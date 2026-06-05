@@ -1,0 +1,65 @@
+groups:
+  - name: kafka-orders
+    rules:
+      - alert: HighDLQCount
+        expr: kafka_orders_dlq_events_stored_total > 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High DLQ event count ({{ $value }})"
+          description: "DLQ events have exceeded 10 in the last minute. Investigate failed events."
+
+      - alert: PaymentFailures
+        expr: rate(kafka_orders_payments_failed_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment failure rate above 5% ({{ $value | humanizePercentage }})"
+          description: "Payment failures are exceeding the 5% threshold."
+
+      - alert: InventoryReservationFailures
+        expr: rate(kafka_orders_stock_reservation_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Inventory reservation failures above 10%"
+          description: "Stock reservation failures are exceeding 10% of total attempts."
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been unreachable for more than 30 seconds."
+
+      - alert: HighRateLimitHits
+        expr: rate(kafka_orders_rate_limit_hits_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limiting activity ({{ $value }}/sec)"
+          description: "More than 5 requests/sec are being rate-limited."
+
+      - alert: HighProcessingLatency
+        expr: histogram_quantile(0.95, sum(rate(kafka_orders_processing_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order processing latency p95 > 2s"
+          description: "95th percentile order processing latency exceeds 2 seconds."
+
+      - alert: HighPaymentLatency
+        expr: histogram_quantile(0.95, sum(rate(kafka_orders_payment_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High payment processing latency p95 > 1s"
+          description: "95th percentile payment processing latency exceeds 1 second."

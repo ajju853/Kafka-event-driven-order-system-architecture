@@ -5,3 +5,5 @@ export const ordersCancelled = createCounter("cancelled_total", "Total orders ca
 export const outboxPublished = createCounter("outbox_published_total", "Outbox events published to Kafka");
 export const rateLimitHits = createCounter("rate_limit_hits_total", "Requests rejected by rate limiter");
 export const orderProcessingDuration = createHistogram("processing_duration_seconds", "Order processing duration", [], [0.1, 0.5, 1, 2, 5]);
+export const eventStored = createCounter("event_store_appended_total", "Events appended to event_store");
+export const eventReplayed = createCounter("event_replayed_total", "Events replayed for projection rebuild");

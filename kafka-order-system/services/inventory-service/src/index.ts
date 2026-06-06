@@ -8,6 +8,7 @@ import { OrderConsumer } from "./consumers/order-consumer";
 import { getInventory, getReservationsByOrder } from "./controllers/inventory-controller";
 import { logger } from "./utils/logger";
 import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main(): Promise<void> {
   initializeTracing("inventory-service");
@@ -26,6 +27,8 @@ async function main(): Promise<void> {
 
   app.get("/api/inventory/:productId", getInventory);
   app.get("/api/reservations/order/:orderId", getReservationsByOrder);
+
+  app.use("/admin", adminRouter);
 
   await initializeDatabase();
   await connectRedis();

@@ -10,6 +10,7 @@ import {
 } from "./controllers/analytics-controller";
 import { logger } from "./utils/logger";
 import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main(): Promise<void> {
   initializeTracing("analytics-service");
@@ -32,6 +33,8 @@ async function main(): Promise<void> {
 
   app.get("/api/analytics/dashboard", getDashboardMetrics);
   app.get("/api/analytics/daily", getDailySummary);
+
+  app.use("/admin", adminRouter);
 
   await initializeDatabase();
 

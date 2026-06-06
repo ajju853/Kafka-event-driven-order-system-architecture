@@ -7,6 +7,7 @@ import { AuditConsumer } from "./consumers/audit-consumer";
 import { getAuditLogs, getAuditStats } from "./controllers/audit-controller";
 import { logger } from "./utils/logger";
 import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main(): Promise<void> {
   initializeTracing("audit-service");
@@ -29,6 +30,8 @@ async function main(): Promise<void> {
 
   app.get("/api/audit/logs", getAuditLogs);
   app.get("/api/audit/stats", getAuditStats);
+
+  app.use("/admin", adminRouter);
 
   await initializeDatabase();
 

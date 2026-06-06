@@ -20,6 +20,7 @@ import {
 import { logger } from "./utils/logger";
 import { initializeTracing } from "./utils/tracing";
 import { getMetrics, getMetricsContentType, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main(): Promise<void> {
   initializeTracing();
@@ -47,6 +48,8 @@ async function main(): Promise<void> {
   app.get("/api/orders", listOrders);
   app.get("/api/orders/:id", getOrder);
   app.post("/api/orders/:id/cancel", cancelOrder);
+
+  app.use("/admin", adminRouter);
 
   app.use(errorHandler);
 

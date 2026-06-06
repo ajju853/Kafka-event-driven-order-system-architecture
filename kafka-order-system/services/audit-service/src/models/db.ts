@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import { EventStore } from "@kafka-order-system/shared";
 
 export const pool = new Pool({
   host: config.postgres.host,
@@ -11,6 +12,8 @@ export const pool = new Pool({
   max: 10,
 });
 
+const auditEventStore = new EventStore(pool, "audit");
+
 pool.on("error", (err) => {
   logger.error("Unexpected PostgreSQL pool error", { error: err.message });
 });
@@ -18,6 +21,7 @@ pool.on("error", (err) => {
 export async function initializeDatabase(): Promise<void> {
   const client = await pool.connect();
   try {
+    await auditEventStore.initializeSchema();
     await client.query(`
       CREATE TABLE IF NOT EXISTS event_audit_log (
         id UUID PRIMARY KEY,

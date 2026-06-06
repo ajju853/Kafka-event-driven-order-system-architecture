@@ -2,6 +2,13 @@ import { Pool } from "pg";
 import { Redis } from "ioredis";
 import { logger } from "../utils/logger";
 import { stockReserved, stockReleased, stockReservationFailures, inventoryChecks } from "../metrics";
+import {
+  buildStockReservedEvent,
+  buildStockReservationFailedEvent,
+  buildStockReleasedEvent,
+  inventoryEventStore,
+} from "./event-sourcing";
+import { projectInventoryEvent } from "../projections/inventory-projection";
 
 const CACHE_TTL = 3600;
 
@@ -67,6 +74,10 @@ export class InventoryService {
       if (failures.length > 0) {
         await client.query("ROLLBACK");
         stockReservationFailures.inc(failures.length);
+
+        const event = buildStockReservationFailedEvent(orderId, failures);
+        await inventoryEventStore.append(event);
+
         return { success: false, failures };
       }
 
@@ -82,13 +93,17 @@ export class InventoryService {
         await this.redis.del(`product:${item.productId}`);
       }
 
+      const event = buildStockReservedEvent(
+        orderId,
+        items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+      );
+      await inventoryEventStore.append(event);
+      await projectInventoryEvent(client, event);
+
       await client.query("COMMIT");
 
-      for (const item of items) {
-        logger.info("Stock reserved", { productId: item.productId, quantity: item.quantity, orderId });
-      }
-
       stockReserved.inc(items.length);
+      logger.info("Stock reserved via event sourcing", { orderId });
       return { success: true, failures: [] };
     } catch (error) {
       await client.query("ROLLBACK");
@@ -103,6 +118,10 @@ export class InventoryService {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
+
+      const event = buildStockReleasedEvent(orderId, items, "payment_failed");
+      await inventoryEventStore.append(event);
+
       for (const item of items) {
         await client.query(
           "UPDATE products SET available_quantity = available_quantity + $1 WHERE id = $2",
@@ -114,9 +133,12 @@ export class InventoryService {
         "UPDATE reservations SET status = 'RELEASED' WHERE order_id = $1",
         [orderId]
       );
+
+      await projectInventoryEvent(client, event);
+
       await client.query("COMMIT");
       stockReleased.inc(items.length);
-      logger.info("Stock released for order", { orderId });
+      logger.info("Stock released for order via event sourcing", { orderId });
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

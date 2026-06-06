@@ -6,6 +6,7 @@ import { initializeDatabase, pool } from "./models/db";
 import { InventoryConsumer } from "./consumers/inventory-consumer";
 import { logger } from "./utils/logger";
 import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main() {
   initializeTracing("payment-service");
@@ -44,6 +45,8 @@ async function main() {
       res.status(500).json({ error: (error as Error).message });
     }
   });
+
+  app.use("/admin", adminRouter);
 
   app.get("/payments/:orderId", async (req, res) => {
     try {

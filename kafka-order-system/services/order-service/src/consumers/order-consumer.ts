@@ -1,7 +1,14 @@
+import { randomUUID } from "crypto";
 import { Kafka, Consumer, EachMessagePayload } from "kafkajs";
 import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import {
+  buildPaymentProcessedEvent,
+  buildPaymentFailedEvent,
+  appendOrderEvent,
+} from "../services/event-sourcing";
+import { projectOrderEvent } from "../projections/order-projection";
 
 export class OrderConsumer {
   private kafka: Kafka;
@@ -39,28 +46,59 @@ export class OrderConsumer {
 
     try {
       const event = JSON.parse(rawValue);
-      const { orderId } = event.payload || {};
+      const payload = event.payload || event;
+      const { orderId, customerId, paymentId, amount, errorMessage } = payload;
 
       if (!orderId) return;
 
-      if (topic === "payment-processed") {
-        await this.pool.query(
-          "UPDATE orders SET status = 'PAYMENT_PROCESSED' WHERE id = $1",
-          [orderId]
-        );
-        logger.info("Order status updated to PAYMENT_PROCESSED", { orderId });
-      } else if (topic === "payment-failed") {
-        await this.pool.query(
-          "UPDATE orders SET status = 'PAYMENT_FAILED' WHERE id = $1",
-          [orderId]
-        );
-        logger.warn("Order status updated to PAYMENT_FAILED", { orderId });
-      } else if (topic === "inventory-failed") {
-        await this.pool.query(
-          "UPDATE orders SET status = 'INVENTORY_FAILED' WHERE id = $1",
-          [orderId]
-        );
-        logger.warn("Order status updated to INVENTORY_FAILED", { orderId });
+      const client = await this.pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        if (topic === "payment-processed") {
+          const domainEvent = buildPaymentProcessedEvent(
+            orderId,
+            customerId || "unknown",
+            paymentId || "unknown",
+            amount || 0
+          );
+          await appendOrderEvent(domainEvent);
+          await projectOrderEvent(client, domainEvent);
+          logger.info("Payment processed event sourced", { orderId });
+
+        } else if (topic === "payment-failed") {
+          const domainEvent = buildPaymentFailedEvent(
+            orderId,
+            customerId || "unknown",
+            paymentId || "unknown",
+            amount || 0,
+            errorMessage || "Payment failed"
+          );
+          await appendOrderEvent(domainEvent);
+          await projectOrderEvent(client, domainEvent);
+          logger.warn("Payment failed event sourced", { orderId, errorMessage });
+
+        } else if (topic === "inventory-failed") {
+          const domainEvent = {
+            eventId: randomUUID(),
+            aggregateId: orderId,
+            aggregateType: "order",
+            eventType: "InventoryFailed",
+            version: 1,
+            timestamp: new Date(),
+            payload: { orderId, reason: payload.reason || "Inventory unavailable" },
+          };
+          await appendOrderEvent(domainEvent);
+          await projectOrderEvent(client, domainEvent);
+          logger.warn("Inventory failed event sourced", { orderId });
+        }
+
+        await client.query("COMMIT");
+      } catch (innerError) {
+        await client.query("ROLLBACK");
+        throw innerError;
+      } finally {
+        client.release();
       }
     } catch (error) {
       logger.error("Error handling response event", {

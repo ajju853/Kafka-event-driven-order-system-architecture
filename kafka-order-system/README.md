@@ -10,3 +10,4 @@
 - [API Reference](docs/API.md)
 - [Kafka Design](docs/Kafka.md)
 - [Observability](docs/Observability.md)
+- [Event Sourcing](docs/EventSourcing.md)

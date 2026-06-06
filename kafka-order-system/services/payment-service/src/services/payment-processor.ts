@@ -2,6 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import { paymentsProcessed, paymentsFailed, paymentDuration } from "../metrics";
+import {
+  buildPaymentProcessedEvent,
+  buildPaymentFailedEvent,
+  paymentEventStore,
+} from "./event-sourcing";
+import { projectPaymentEvent } from "../projections/payment-projection";
 
 export interface PaymentResult {
   transactionId: string;
@@ -27,32 +33,30 @@ export async function processPayment(
   const client = await pool.connect();
   try {
     if (isSuccess) {
-      await client.query(
-        `INSERT INTO payments (id, order_id, customer_id, amount, status, transaction_id, processed_at)
-         VALUES ($1, $2, $3, $4, 'SUCCESS', $5, NOW())`,
-        [uuidv4(), orderId, customerId, amount, transactionId]
+      const event = buildPaymentProcessedEvent(
+        orderId, customerId, uuidv4(), transactionId, amount
       );
+
+      await paymentEventStore.append(event);
+      await projectPaymentEvent(client, event);
 
       paymentsProcessed.inc();
       paymentDuration.observe((Date.now() - startTime) / 1000);
-      logger.info("Payment processed successfully", {
-        orderId,
-        transactionId,
-      });
+      logger.info("Payment processed via event sourcing", { orderId, transactionId, eventId: event.eventId });
 
       return { transactionId, status: "SUCCESS" };
     } else {
       const errorMessage = "Payment declined: insufficient funds";
-
-      await client.query(
-        `INSERT INTO payments (id, order_id, customer_id, amount, status, transaction_id, error_message, processed_at)
-         VALUES ($1, $2, $3, $4, 'FAILED', $5, $6, NOW())`,
-        [uuidv4(), orderId, customerId, amount, transactionId, errorMessage]
+      const event = buildPaymentFailedEvent(
+        orderId, customerId, uuidv4(), amount, errorMessage
       );
+
+      await paymentEventStore.append(event);
+      await projectPaymentEvent(client, event);
 
       paymentsFailed.inc();
       paymentDuration.observe((Date.now() - startTime) / 1000);
-      logger.warn("Payment failed", { orderId, transactionId, errorMessage });
+      logger.warn("Payment failed via event sourcing", { orderId, transactionId, errorMessage, eventId: event.eventId });
 
       return { transactionId, status: "FAILED", errorMessage };
     }

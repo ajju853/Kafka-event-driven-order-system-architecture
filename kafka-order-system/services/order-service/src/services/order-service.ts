@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import {
@@ -7,61 +8,47 @@ import {
   CreateOrderResponse,
   ORDER_STATUS,
 } from "@kafka-order-system/shared";
+import {
+  buildOrderCreatedEvent,
+  buildOrderCancelledEvent,
+  appendOrderEvent,
+} from "./event-sourcing";
+import { projectOrderEvent } from "../projections/order-projection";
 
 export class OrderService {
   async createOrder(
     request: CreateOrderRequest
   ): Promise<CreateOrderResponse> {
     const orderId = uuidv4();
-    const now = new Date().toISOString();
-    const items = request.items.map((item) => ({
-      id: uuidv4(),
-      productId: item.productId,
-      quantity: item.quantity,
-      price: 0,
-    }));
-
-    const totalAmount = items.reduce((sum, item) => sum + item.price, 0);
+    const totalAmount = request.items.reduce((sum, item) => sum + item.price, 0);
 
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      await client.query(
-        `INSERT INTO orders (id, customer_id, status, total_amount, shipping_address, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          orderId,
-          request.customerId,
-          ORDER_STATUS.CREATED,
-          totalAmount,
-          JSON.stringify(request.shippingAddress),
-          now,
-          now,
-        ]
+      const event = buildOrderCreatedEvent(
+        orderId,
+        request.customerId,
+        request.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+        totalAmount,
+        request.shippingAddress as Record<string, unknown>
       );
 
-      for (const item of items) {
-        await client.query(
-          `INSERT INTO order_items (id, order_id, product_id, quantity, price)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [item.id, orderId, item.productId, item.quantity, item.price]
-        );
-      }
+      await appendOrderEvent(event);
 
-      const eventPayload = {
-        eventId: uuidv4(),
+      const outboxPayload = {
+        eventId: event.eventId,
         eventType: "ORDER_CREATED",
         orderId,
         customerId: request.customerId,
         items: request.items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
-          price: 0,
+          price: i.price,
         })),
         totalAmount,
         shippingAddress: request.shippingAddress,
-        timestamp: now,
+        timestamp: event.timestamp.toISOString(),
         version: 1,
       };
 
@@ -69,19 +56,22 @@ export class OrderService {
         `INSERT INTO outbox_events (id, aggregate_type, aggregate_id, event_type, payload)
          VALUES ($1, $2, $3, $4, $5)`,
         [
-          eventPayload.eventId,
+          event.eventId,
           "order",
           orderId,
           "ORDER_CREATED",
-          JSON.stringify(eventPayload),
+          JSON.stringify(outboxPayload),
         ]
       );
 
+      await projectOrderEvent(client, event);
+
       await client.query("COMMIT");
 
-      logger.info("Order created with outbox event", {
+      logger.info("Order created with event sourcing", {
         orderId,
         customerId: request.customerId,
+        eventId: event.eventId,
       });
 
       return { orderId, status: ORDER_STATUS.CREATED };
@@ -220,35 +210,38 @@ export class OrderService {
         throw new Error(`Cannot cancel order in status: ${currentStatus}`);
       }
 
-      await client.query(
-        `UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2`,
-        [ORDER_STATUS.CANCELLED, orderId]
+      const event = buildOrderCancelledEvent(
+        orderId,
+        result.rows[0].customer_id,
+        reason
       );
 
-      const eventPayload = {
-        eventId: uuidv4(),
-        eventType: "ORDER_CANCELLED",
-        orderId,
-        customerId: result.rows[0].customer_id,
-        reason,
-        timestamp: new Date().toISOString(),
-        version: 1,
-      };
+      await appendOrderEvent(event);
 
       await client.query(
         `INSERT INTO outbox_events (id, aggregate_type, aggregate_id, event_type, payload)
          VALUES ($1, $2, $3, $4, $5)`,
         [
-          eventPayload.eventId,
+          event.eventId,
           "order",
           orderId,
           "ORDER_CANCELLED",
-          JSON.stringify(eventPayload),
+          JSON.stringify({
+            eventId: event.eventId,
+            eventType: "ORDER_CANCELLED",
+            orderId,
+            customerId: result.rows[0].customer_id,
+            reason,
+            timestamp: event.timestamp.toISOString(),
+            version: 1,
+          }),
         ]
       );
 
+      await projectOrderEvent(client, event);
+
       await client.query("COMMIT");
-      logger.info("Order cancelled", { orderId, reason });
+      logger.info("Order cancelled via event sourcing", { orderId, reason });
     } catch (error) {
       await client.query("ROLLBACK");
       logger.error("Failed to cancel order", {

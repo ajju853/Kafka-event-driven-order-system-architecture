@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { config } from "../config";
 import { logger } from "../utils/logger";
+import { orderEventStore } from "../services/event-sourcing";
 
 export const pool = new Pool({
   host: config.postgres.host,
@@ -21,6 +22,7 @@ export async function initializeDatabase(): Promise<void> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    await orderEventStore.initializeSchema();
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS orders (

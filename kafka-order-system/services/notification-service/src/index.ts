@@ -5,6 +5,7 @@ import { config } from "./config";
 import { OrderEventConsumer } from "./consumers/order-consumer";
 import { logger } from "./utils/logger";
 import { getMetrics, getMetricsContentType, initializeTracing, shutdownTracing } from "@kafka-order-system/shared";
+import adminRouter from "./controllers/admin-controller";
 
 async function main(): Promise<void> {
   initializeTracing("notification-service");
@@ -17,6 +18,8 @@ async function main(): Promise<void> {
     res.set("Content-Type", getMetricsContentType());
     res.send(await getMetrics());
   });
+  app.use("/admin", adminRouter);
+
   app.get("/health", (_req, res) => {
     res.json({
       service: "notification-service",

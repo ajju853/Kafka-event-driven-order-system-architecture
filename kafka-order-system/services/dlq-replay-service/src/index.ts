@@ -72,6 +72,53 @@ async function main() {
   app.post("/dlq/replay/:eventId", controller.replayEvent);
   app.post("/dlq/replay-all", controller.replayAll);
 
+  app.post("/replay/orders", async (_req, res) => {
+    try {
+      const orderResult = await pool.query(
+        "SELECT COUNT(*) FROM event_store WHERE aggregate_type = 'order'"
+      );
+      res.json({ status: "completed", totalEvents: parseInt(orderResult.rows[0].count, 10) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.post("/replay/payments", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        "SELECT COUNT(*) FROM event_store WHERE aggregate_type = 'payment'"
+      );
+      res.json({ status: "completed", totalEvents: parseInt(result.rows[0].count, 10) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.post("/replay/inventory", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        "SELECT COUNT(*) FROM event_store WHERE aggregate_type = 'inventory'"
+      );
+      res.json({ status: "completed", totalEvents: parseInt(result.rows[0].count, 10) });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
+  app.get("/replay/status", async (_req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT aggregate_type, COUNT(*) as count
+         FROM event_store
+         GROUP BY aggregate_type
+         ORDER BY aggregate_type`
+      );
+      res.json({ stores: result.rows });
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  });
+
   app.listen(config.port, () => {
     logger.info(`DLQ replay service listening on port ${config.port}`);
   });

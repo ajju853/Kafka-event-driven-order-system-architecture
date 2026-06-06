@@ -3,7 +3,7 @@ import { Pool } from "pg";
 import { config } from "../config";
 import { EventStore } from "@kafka-order-system/shared";
 
-const pool = new Pool({
+const adminPool = new Pool({
   host: config.postgres.host,
   port: config.postgres.port,
   user: config.postgres.user,
@@ -12,7 +12,12 @@ const pool = new Pool({
   max: 5,
 });
 
-const notifEventStore = new EventStore(pool, "notification");
+adminPool.on("error", (err) => {
+  console.error("Admin pool error", err.message);
+});
+
+const notifEventStore = new EventStore(adminPool, "notification");
+
 const router = Router();
 
 router.post("/replay", async (_req: Request, res: Response) => {

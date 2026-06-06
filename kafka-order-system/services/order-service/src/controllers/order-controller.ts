@@ -39,57 +39,6 @@ export async function createOrder(
   }
 }
 
-export async function getOrder(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const order = await orderService.getOrder(req.params.id);
-    if (!order) {
-      res.status(404).json({
-        success: false,
-        error: "Order not found",
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-    res.json({
-      success: true,
-      data: order,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function listOrders(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    const customerId = req.query.customerId as string | undefined;
-    const status = req.query.status as string | undefined;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-
-    const result = await orderService.listOrders(customerId, status, page, limit);
-    res.json({
-      success: true,
-      data: result.orders,
-      total: result.total,
-      page,
-      limit,
-      totalPages: Math.ceil(result.total / limit),
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
 export async function cancelOrder(
   req: Request,
   res: Response,

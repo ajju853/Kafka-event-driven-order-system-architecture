@@ -200,6 +200,8 @@ export class OrderConsumer {
               eventId: uuidv4(),
               eventType: "INVENTORY_RESERVED",
               orderId: event.orderId,
+              customerId: event.customerId,
+              totalAmount: event.totalAmount,
               items: event.items.map((i) => ({
                 productId: i.productId,
                 quantity: i.quantity,

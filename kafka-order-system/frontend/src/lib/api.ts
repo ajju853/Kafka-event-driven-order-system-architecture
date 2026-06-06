@@ -1,10 +1,12 @@
 const API_GATEWAY = process.env.NEXT_PUBLIC_API_GATEWAY || "http://localhost:4001";
+const QUERY_GATEWAY = process.env.NEXT_PUBLIC_QUERY_GATEWAY || "http://localhost:4008";
 
 async function fetchApi<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit,
+  baseUrl?: string
 ): Promise<T> {
-  const url = `${API_GATEWAY}${endpoint}`;
+  const url = `${baseUrl || API_GATEWAY}${endpoint}`;
   const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
@@ -73,11 +75,17 @@ export const api = {
       if (params?.page) searchParams.set("page", params.page.toString());
       const qs = searchParams.toString();
       return fetchApi<{ success: boolean; data: Order[]; total: number }>(
-        `/api/orders${qs ? `?${qs}` : ""}`
+        `/api/orders${qs ? `?${qs}` : ""}`,
+        undefined,
+        QUERY_GATEWAY
       );
     },
     get: (id: string) =>
-      fetchApi<{ success: boolean; data: Order }>(`/api/orders/${id}`),
+      fetchApi<{ success: boolean; data: Order }>(
+        `/api/orders/${id}`,
+        undefined,
+        QUERY_GATEWAY
+      ),
     cancel: (id: string, reason?: string) =>
       fetchApi<{ success: boolean; data: { orderId: string; status: string } }>(
         `/api/orders/${id}/cancel`,

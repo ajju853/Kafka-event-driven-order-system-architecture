@@ -52,3 +52,6 @@ data:
       - job_name: "dlq-replay-service"
         static_configs:
           - targets: ["dlq-replay-service:4007"]
+      - job_name: "order-query-service"
+        static_configs:
+          - targets: ["order-query-service:4008"]

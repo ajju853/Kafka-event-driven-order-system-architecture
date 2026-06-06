@@ -5,6 +5,13 @@ export const config = {
     clientId: "notification-service",
     groupId: "notification-service-group",
   },
+  postgres: {
+    host: process.env.POSTGRES_HOST || "localhost",
+    port: parseInt(process.env.POSTGRES_PORT || "5432", 10),
+    user: process.env.POSTGRES_USER || "orderuser",
+    password: process.env.POSTGRES_PASSWORD || "orderpass",
+    database: process.env.POSTGRES_DB || "notificationdb",
+  },
   email: {
     enabled: process.env.EMAIL_ENABLED === "true",
     fromAddress: process.env.EMAIL_FROM || "orders@example.com",

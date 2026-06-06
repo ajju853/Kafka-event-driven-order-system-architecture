@@ -320,6 +320,31 @@ services:
     networks:
       - kafka-net
 
+  order-query-service:
+    build:
+      context: ..
+      dockerfile: services/order-query-service/Dockerfile
+    hostname: order-query-service
+    container_name: order-query-service
+    ports:
+      - "4008:4008"
+    environment:
+      PORT: 4008
+      KAFKA_BROKER: kafka:29092
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: orderuser
+      POSTGRES_PASSWORD: orderpass
+      POSTGRES_DB: orderdb
+      NODE_ENV: production
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - kafka-net
+
   prometheus:
     image: prom/prometheus:v2.52.0
     hostname: prometheus
@@ -341,6 +366,8 @@ services:
       audit-service:
         condition: service_started
       payment-service:
+        condition: service_started
+      order-query-service:
         condition: service_started
       dlq-replay-service:
         condition: service_started
@@ -414,9 +441,12 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_GATEWAY: http://localhost:4001
+      NEXT_PUBLIC_QUERY_GATEWAY: http://localhost:4008
       NODE_ENV: production
     depends_on:
       order-service:
+        condition: service_started
+      order-query-service:
         condition: service_started
     networks:
       - kafka-net

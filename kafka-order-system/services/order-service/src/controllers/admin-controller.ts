@@ -3,7 +3,6 @@ import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import { orderEventStore } from "../services/event-sourcing";
 import { projectOrderEvent } from "../projections/order-projection";
-
 const router = Router();
 
 router.post("/replay", async (_req: Request, res: Response) => {
@@ -47,31 +46,6 @@ router.post("/replay", async (_req: Request, res: Response) => {
     res.status(500).json({ error: "Replay failed" });
   } finally {
     client.release();
-  }
-});
-
-router.get("/events", async (req: Request, res: Response) => {
-  try {
-    const aggregateId = req.query.aggregateId as string;
-    const events = aggregateId
-      ? await orderEventStore.getEvents(aggregateId)
-      : await orderEventStore.getAllEvents(100, 0);
-
-    res.json({ events, count: events.length });
-  } catch (error) {
-    logger.error("Failed to fetch events", {
-      error: (error as Error).message,
-    });
-    res.status(500).json({ error: "Failed to fetch events" });
-  }
-});
-
-router.get("/events/count", async (_req: Request, res: Response) => {
-  try {
-    const count = await orderEventStore.count();
-    res.json({ count });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to count events" });
   }
 });
 

@@ -1,6 +1,8 @@
 import { randomUUID } from "crypto";
 import { Pool, PoolClient } from "pg";
 import { DomainEvent, StoredEvent } from "../events/domain-events";
+import "../upcasters/order-created";
+import { applyUpcasters } from "../upcasters/registry";
 
 const SQL_CREATE_TABLE = `
   CREATE TABLE IF NOT EXISTS event_store (
@@ -76,7 +78,7 @@ export class EventStore {
        ORDER BY version ASC`,
       [this.aggregateType, aggregateId]
     );
-    return result.rows.map(toStoredEvent);
+    return result.rows.map(mapAndUpcast);
   }
 
   async getEventsSince(since: Date): Promise<StoredEvent[]> {
@@ -86,7 +88,7 @@ export class EventStore {
        ORDER BY timestamp ASC`,
       [this.aggregateType, since]
     );
-    return result.rows.map(toStoredEvent);
+    return result.rows.map(mapAndUpcast);
   }
 
   async getAllEvents(limit = 1000, offset = 0): Promise<StoredEvent[]> {
@@ -97,7 +99,7 @@ export class EventStore {
        LIMIT $2 OFFSET $3`,
       [this.aggregateType, limit, offset]
     );
-    return result.rows.map(toStoredEvent);
+    return result.rows.map(mapAndUpcast);
   }
 
   async count(): Promise<number> {
@@ -107,6 +109,10 @@ export class EventStore {
     );
     return parseInt(result.rows[0].count, 10);
   }
+}
+
+function mapAndUpcast(row: Record<string, unknown>): StoredEvent {
+  return applyUpcasters(toStoredEvent(row));
 }
 
 function toStoredEvent(row: Record<string, unknown>): StoredEvent {

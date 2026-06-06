@@ -13,8 +13,6 @@ import { rateLimiter } from "./middleware/rate-limiter";
 import { optionalAuth } from "./middleware/auth";
 import {
   createOrder,
-  getOrder,
-  listOrders,
   cancelOrder,
 } from "./controllers/order-controller";
 import { logger } from "./utils/logger";
@@ -45,8 +43,6 @@ async function main(): Promise<void> {
   });
 
   app.post("/api/orders", createOrder);
-  app.get("/api/orders", listOrders);
-  app.get("/api/orders/:id", getOrder);
   app.post("/api/orders/:id/cancel", cancelOrder);
 
   app.use("/admin", adminRouter);

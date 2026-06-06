@@ -3,4 +3,5 @@ export * from "./types";
 export * from "./utils/metrics";
 export * from "./utils/logger";
 export { EventStore } from "./utils/event-store";
+export { applyUpcasters, registerUpcaster } from "./upcasters/registry";
 export * from "./telemetry/tracing";

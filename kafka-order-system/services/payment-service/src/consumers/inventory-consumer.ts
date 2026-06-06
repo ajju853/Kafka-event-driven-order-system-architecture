@@ -1,5 +1,5 @@
 import { Kafka, Consumer, EachMessagePayload } from "kafkajs";
-import { OrderEvent } from "@kafka-order-system/shared";
+import { EVENT_TOPICS } from "@kafka-order-system/shared";
 import { config } from "../config";
 import { pool } from "../models/db";
 import { processPayment } from "../services/payment-processor";
@@ -29,7 +29,7 @@ export class InventoryConsumer {
   async start(): Promise<void> {
     await this.consumer.connect();
     await this.consumer.subscribe({
-      topic: "inventory-reserved",
+      topic: EVENT_TOPICS.INVENTORY_RESERVED,
       fromBeginning: false,
     });
 
@@ -52,20 +52,20 @@ export class InventoryConsumer {
     }
 
     try {
-      const event: OrderEvent = JSON.parse(rawValue);
+      const event = JSON.parse(rawValue);
 
       if (await this.isDuplicate(eventId)) {
         logger.info("Skipping duplicate event", { eventId });
         return;
       }
 
-      if (event.type !== "ORDER_INVENTORY_RESERVED") {
-        logger.debug("Ignoring non-inventory event", { eventType: event.type });
+      if (event.eventType !== "INVENTORY_RESERVED") {
+        logger.debug("Ignoring non-inventory event", { eventType: event.eventType });
         return;
       }
 
-      const { orderId, customerId, totalAmount } = event.payload;
-      const paymentResult = await processPayment(orderId, customerId!, totalAmount);
+      const { orderId, customerId, totalAmount } = event;
+      const paymentResult = await processPayment(orderId, customerId, totalAmount);
 
       await this.markProcessed(eventId);
 
@@ -75,19 +75,16 @@ export class InventoryConsumer {
       try {
         if (paymentResult.status === "SUCCESS") {
           await producer.send({
-            topic: "payment-processed",
+            topic: EVENT_TOPICS.PAYMENT_PROCESSED,
             messages: [
               {
                 key: eventId,
                 value: JSON.stringify({
                   ...event,
-                  type: "ORDER_PAYMENT_PROCESSED",
+                  eventType: "ORDER_PAYMENT_PROCESSED",
                   timestamp: new Date().toISOString(),
-                  payload: {
-                    ...event.payload,
-                    transactionId: paymentResult.transactionId,
-                    paymentStatus: "SUCCESS",
-                  },
+                  transactionId: paymentResult.transactionId,
+                  paymentStatus: "SUCCESS",
                 }),
               },
             ],
@@ -95,35 +92,31 @@ export class InventoryConsumer {
           logger.info("Payment processed event published", { orderId });
         } else {
           await producer.send({
-            topic: "payment-failed",
+            topic: EVENT_TOPICS.PAYMENT_FAILED,
             messages: [
               {
                 key: eventId,
                 value: JSON.stringify({
                   ...event,
-                  type: "ORDER_PAYMENT_FAILED",
+                  eventType: "ORDER_PAYMENT_FAILED",
                   timestamp: new Date().toISOString(),
-                  payload: {
-                    ...event.payload,
-                    transactionId: paymentResult.transactionId,
-                    paymentStatus: "FAILED",
-                    errorMessage: paymentResult.errorMessage,
-                  },
+                  transactionId: paymentResult.transactionId,
+                  paymentStatus: "FAILED",
+                  errorMessage: paymentResult.errorMessage,
                 }),
               },
             ],
           });
 
           await producer.send({
-            topic: "inventory-release",
+            topic: EVENT_TOPICS.INVENTORY_RELEASE,
             messages: [
               {
                 key: eventId,
                 value: JSON.stringify({
                   ...event,
-                  type: "INVENTORY_RELEASE",
+                  eventType: "INVENTORY_RELEASE",
                   timestamp: new Date().toISOString(),
-                  payload: event.payload,
                 }),
               },
             ],
@@ -164,7 +157,7 @@ export class InventoryConsumer {
       await producer.connect();
       try {
         await producer.send({
-          topic: "dlq-events",
+          topic: EVENT_TOPICS.DLQ_EVENTS,
           messages: [
             {
               key: eventId,
@@ -173,7 +166,7 @@ export class InventoryConsumer {
                 errorMessage,
                 failedAt: new Date().toISOString(),
                 consumerGroup: config.kafka.groupId,
-                topic: "inventory-reserved",
+                topic: EVENT_TOPICS.INVENTORY_RESERVED,
               }),
             },
           ],

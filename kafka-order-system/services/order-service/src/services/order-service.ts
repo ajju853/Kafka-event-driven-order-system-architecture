@@ -1,10 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
-import { randomUUID } from "crypto";
 import { pool } from "../models/db";
 import { logger } from "../utils/logger";
 import {
   CreateOrderRequest,
-  OrderResponse,
   CreateOrderResponse,
   ORDER_STATUS,
 } from "@kafka-order-system/shared";
@@ -84,107 +82,6 @@ export class OrderService {
     } finally {
       client.release();
     }
-  }
-
-  async getOrder(orderId: string): Promise<OrderResponse | null> {
-    const result = await pool.query(
-      `SELECT o.id, o.customer_id, o.status, o.total_amount,
-              o.shipping_address, o.created_at, o.updated_at,
-              COALESCE(
-                json_agg(
-                  json_build_object(
-                    'productId', oi.product_id,
-                    'quantity', oi.quantity,
-                    'price', oi.price
-                  )
-                ) FILTER (WHERE oi.id IS NOT NULL),
-                '[]'
-              ) as items
-       FROM orders o
-       LEFT JOIN order_items oi ON oi.order_id = o.id
-       WHERE o.id = $1
-       GROUP BY o.id`,
-      [orderId]
-    );
-
-    if (result.rows.length === 0) return null;
-
-    const row = result.rows[0];
-    return {
-      id: row.id,
-      customerId: row.customer_id,
-      items: row.items,
-      totalAmount: parseFloat(row.total_amount),
-      status: row.status,
-      shippingAddress: row.shipping_address,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
-  }
-
-  async listOrders(
-    customerId?: string,
-    status?: string,
-    page = 1,
-    limit = 20
-  ): Promise<{ orders: OrderResponse[]; total: number }> {
-    const conditions: string[] = [];
-    const params: string[] = [];
-    let paramIndex = 1;
-
-    if (customerId) {
-      conditions.push(`o.customer_id = $${paramIndex++}`);
-      params.push(customerId);
-    }
-    if (status) {
-      conditions.push(`o.status = $${paramIndex++}`);
-      params.push(status);
-    }
-
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    const offset = (page - 1) * limit;
-
-    const countResult = await pool.query(
-      `SELECT COUNT(*) FROM orders o ${whereClause}`,
-      params
-    );
-    const total = parseInt(countResult.rows[0].count, 10);
-
-    const result = await pool.query(
-      `SELECT o.id, o.customer_id, o.status, o.total_amount,
-              o.shipping_address, o.created_at, o.updated_at,
-              COALESCE(
-                json_agg(
-                  json_build_object(
-                    'productId', oi.product_id,
-                    'quantity', oi.quantity,
-                    'price', oi.price
-                  )
-                ) FILTER (WHERE oi.id IS NOT NULL),
-                '[]'
-              ) as items
-       FROM orders o
-       LEFT JOIN order_items oi ON oi.order_id = o.id
-       ${whereClause}
-       GROUP BY o.id
-       ORDER BY o.created_at DESC
-       LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-      [...params, limit.toString(), offset.toString()]
-    );
-
-    const orders = result.rows.map((row) => ({
-      id: row.id,
-      customerId: row.customer_id,
-      items: row.items,
-      totalAmount: parseFloat(row.total_amount),
-      status: row.status,
-      shippingAddress: row.shipping_address,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }));
-
-    return { orders, total };
   }
 
   async cancelOrder(orderId: string, reason?: string): Promise<void> {

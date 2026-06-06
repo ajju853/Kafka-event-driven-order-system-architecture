@@ -39,6 +39,10 @@ scrape_configs:
     static_configs:
       - targets: ["dlq-replay-service:4007"]
 
+  - job_name: "order-query-service"
+    static_configs:
+      - targets: ["order-query-service:4008"]
+
   - job_name: "kafka-exporter"
     static_configs:
       - targets: ["kafka-exporter:9308"]

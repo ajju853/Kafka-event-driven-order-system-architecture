@@ -1,10 +1,16 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=venom&color=gradient&customColorList=0,2,2,5,30&height=200&section=header&text=Kafka%20Order%20System&fontSize=52&fontColor=fff&animation=fadeIn&fontAlignY=40&desc=Production-Grade%20Event-Driven%20Microservices%20Architecture&descAlignY=62&descAlign=50&descSize=17" width="100%"/>
+<h1>⚡ Kafka Order System</h1>
+<h3>Production-Grade Event-Driven Microservices Architecture</h3>
+
+<p>
+<strong>7 Microservices</strong> &nbsp;·&nbsp;
+<strong>8 Kafka Topics</strong> &nbsp;·&nbsp;
+<strong>Kubernetes + HPA</strong> &nbsp;·&nbsp;
+<strong>Zero Data Loss</strong>
+</p>
 
 </div>
-
-<div align="center">
 
 **7 Microservices · 8 Kafka Topics · Kubernetes + HPA · Zero Data Loss**
 
